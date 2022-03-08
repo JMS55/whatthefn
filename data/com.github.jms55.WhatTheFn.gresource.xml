@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/github/jms55/WhatTheFn/">
+    <file compressed="true">style.css</file>
+    <file compressed="true">style-dark.css</file>
+  </gresource>
+  <gresource prefix="/com/github/jms55/WhatTheFn/icons/scalable/actions/">
+    <file compressed="true" preprocess="xml-stripblanks">plus-symbolic.svg</file>
+    <file compressed="true" preprocess="xml-stripblanks">plus-large-symbolic.svg</file>
+  </gresource>
+</gresources>

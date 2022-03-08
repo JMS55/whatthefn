@@ -1,0 +1,10 @@
+row.success_row {
+    background-color: @green_5;
+}
+
+button.blue_button {
+	background-color: @blue_5;
+}
+button.green_button {
+	background-color: @green_5;
+}

@@ -1,0 +1,33 @@
+Instead of window title being WhatTheFn, maybe make it the project name? (and WhatTheFn when no project yet)
+    Tab widget is subclass with state property and project name property
+    WindowTitle binds to selected_page->child->project_name, WhatTheFn if not yet set
+    WindowSubtitle binds to selected_page->child->state
+Fix ProfileTab states
+    Setup->Compiling or LoadingProfile
+    Compiling->Profiling->LoadingProfile
+    LoadingProfile->Profile
+Finish ProfileSetupPage
+Write ProfilePage
+Switch to subclassing and UI files
+
+
+
+Hotkeys (shortcuts, shotcut window, mnemonics, context menus, and tooltips):
+        Open/close/send to new window tabs
+        Select Cargo.toml
+        Open profile / start profiling
+QOL:
+    Progressbars for compiling/loading feedback
+    Tab styling
+    Make ProfileSetupPage entries wider/easier to edit
+    Allow combining windows together into one window
+    Allow dropping profiles onto app/window/tabs to open
+    After profiling (success or fail), bring window to foreground of OS?
+
+Write perf.data->profile.wtf converter (or at least convert perf.json)
+    https://fasterthanli.me/series/making-our-own-executable-packer
+    Make symbolicator a map between object name (including shared libraries) and contexts
+    Need to sort events before parsing them (external mergesort?)
+    Read useful extra headers
+    Remove traits, make newtype around BufReader<File>, and do regular impl blocks
+    Convert to profile.wtf

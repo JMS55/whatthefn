@@ -1,0 +1,40 @@
+struct Profile {
+    symbol_tree: Tree<Subsymbol>, // Tree of subsymbols forming symbols
+    stack_trace_tree: Tree<Symbol>, // Tree of symbols forming stack traces
+
+    thread_names: List<String>,
+    stack_trace_thread_divisions: List<usize>, // [0, 100, 300] means stack traces 0-99 belong to thread 1 (thread_names[0]), and stack traces 100-300 belong to thread 2 (thread_names[1])
+
+    stack_traces: List<StackTrace>, // The actual stack traces for every thread, each Xms apart (within a thread division)
+}
+
+type Subsymbol = String;
+type Symbol = TreePath; // Path into symbol_tree
+type StackTrace = TreePath; // Path into stack_trace_tree
+
+------------------------
+
+struct Tree<T> {
+    data: List<T>,
+    nodes: List<TreeNode>,
+}
+
+struct TreeNode {
+    data_index: usize,
+    children_node_indices: List<usize>,
+}
+
+type TreePath = List<usize>;
+
+------------------------
+
+// Allows making a type generic over mutable storage (for building a struct to serialize) vs immutable storage (for deserializing from a file)
+// ExampleType<L: List<T>> can do:
+// impl ExampleList<MutableList<T>> {} to add mutable-only methods
+
+trait List;
+impl List for ImmutableList<[T]>;
+impl List for MutableList<T>;
+
+type ImmutableList<T> = Box<T>;
+type MutableList<T> = Vec<T>;
