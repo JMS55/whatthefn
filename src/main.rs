@@ -1,8 +1,8 @@
 mod application_window;
+mod page_view;
 mod perf_data_parser;
 mod profile_page;
 mod profile_setup_page;
-mod profile_tab;
 
 use crate::application_window::new_application_window;
 use adw::Application;

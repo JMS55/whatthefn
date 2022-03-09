@@ -13,24 +13,24 @@ use std::cell::RefCell;
 use std::path::Path;
 
 glib::wrapper! {
-    pub struct ProfileTab(ObjectSubclass<ProfileTabPrivate>)
+    pub struct ProfilePageView(ObjectSubclass<ProfilePageViewPrivate>)
     @extends Bin, Widget,
     @implements Accessible, Buildable, ConstraintTarget;
 }
 
-impl ProfileTab {
+impl ProfilePageView {
     pub fn new() -> Self {
-        let profile_tab = Object::new(&[]).unwrap();
-        let initial_page = new_profile_setup_page(&profile_tab);
-        profile_tab.set_child(Some(&initial_page));
-        profile_tab
+        let page_view = Object::new(&[]).unwrap();
+        let initial_page = new_profile_setup_page(&page_view);
+        page_view.set_child(Some(&initial_page));
+        page_view
     }
 
     pub fn switch_to_profile_page(&self, profile_path: &Path) {
         todo!()
     }
 
-    pub fn set_data(&self, state: ProfileTabState, profile_name: &str) {
+    pub fn set_data(&self, state: ProfilePageViewState, profile_name: &str) {
         self.set_profile_name(profile_name);
         self.set_state(state);
     }
@@ -43,18 +43,18 @@ impl ProfileTab {
         self.set_property("profile-name", profile_name);
     }
 
-    pub fn state(&self) -> ProfileTabState {
+    pub fn state(&self) -> ProfilePageViewState {
         self.property("state")
     }
 
-    pub fn set_state(&self, state: ProfileTabState) {
+    pub fn set_state(&self, state: ProfilePageViewState) {
         self.set_property("state", state);
     }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, GEnum)]
-#[enum_type(name = "WtfProfileTabState")]
-pub enum ProfileTabState {
+#[enum_type(name = "WtfProfilePageViewState")]
+pub enum ProfilePageViewState {
     Setup,
     SetupCompilingProgram,
     SetupProfilingProgram,
@@ -62,7 +62,7 @@ pub enum ProfileTabState {
     Profile,
 }
 
-impl Default for ProfileTabState {
+impl Default for ProfilePageViewState {
     fn default() -> Self {
         Self::Setup
     }
@@ -71,35 +71,35 @@ impl Default for ProfileTabState {
 // ------------------------------------------------------------------------------
 
 #[derive(Default)]
-pub struct ProfileTabPrivate {
-    state: RefCell<ProfileTabState>,
+pub struct ProfilePageViewPrivate {
+    state: RefCell<ProfilePageViewState>,
     profile_name: RefCell<Option<String>>,
 }
 
 #[object_subclass]
-impl ObjectSubclass for ProfileTabPrivate {
-    const NAME: &'static str = "WtfProfileTab";
-    type Type = ProfileTab;
+impl ObjectSubclass for ProfilePageViewPrivate {
+    const NAME: &'static str = "WtfProfilePageView";
+    type Type = ProfilePageView;
     type ParentType = Bin;
     type Interfaces = ();
 }
 
-impl ObjectImpl for ProfileTabPrivate {
+impl ObjectImpl for ProfilePageViewPrivate {
     fn properties() -> &'static [ParamSpec] {
         static PROPERTIES: Lazy<[ParamSpec; 2]> = Lazy::new(|| {
             [
                 ParamSpecEnum::new(
                     "state",
                     "State",
-                    "Which page the tab is on and what it is doing",
-                    ProfileTabState::static_type(),
-                    ProfileTabState::default() as i32,
+                    "Which page the view is showing and what it is doing",
+                    ProfilePageViewState::static_type(),
+                    ProfilePageViewState::default() as i32,
                     ParamFlags::READWRITE,
                 ),
                 ParamSpecString::new(
                     "profile-name",
                     "ProfileName",
-                    "Name of the profile the tab is operating on",
+                    "Name of the profile the view is showingn",
                     None,
                     ParamFlags::READWRITE,
                 ),
@@ -125,5 +125,5 @@ impl ObjectImpl for ProfileTabPrivate {
     }
 }
 
-impl WidgetImpl for ProfileTabPrivate {}
-impl BinImpl for ProfileTabPrivate {}
+impl WidgetImpl for ProfilePageViewPrivate {}
+impl BinImpl for ProfilePageViewPrivate {}

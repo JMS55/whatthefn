@@ -1,4 +1,4 @@
-use crate::profile_tab::{ProfileTab, ProfileTabState};
+use crate::page_view::{ProfilePageView, ProfilePageViewState};
 use adw::traits::{ActionRowExt, ExpanderRowExt, PreferencesGroupExt};
 use adw::{ActionRow, Clamp, ExpanderRow, PreferencesGroup, Toast, ToastOverlay};
 use gio::prelude::InputStreamExtManual;
@@ -19,9 +19,7 @@ const PERF_COMMAND: &str =
     "perf record --freq 99 --call-graph dwarf --output=${TMP_FILE} ${PROGRAM} ${PROGRAM_ARGUMENTS}";
 const CARGO_BUILD_COMMAND: &str = "RUSTFLAGS=-g cargo build --release --message-format=json";
 
-// TODO: Add comments
-
-pub fn new_profile_setup_page(profile_tab: &ProfileTab) -> ToastOverlay {
+pub fn new_profile_setup_page(page_view: &ProfilePageView) -> ToastOverlay {
     let cargo_toml_path = Label::builder()
         .css_classes(vec!["dim-label".to_owned()])
         .build();
@@ -71,6 +69,7 @@ pub fn new_profile_setup_page(profile_tab: &ProfileTab) -> ToastOverlay {
         container
     });
 
+    // TODO: Extract file chooser to seperate method, create in button callbacks dynamically
     let cargo_toml_chooser = FileChooserNative::new(
         Some("Select a Cargo.toml"),
         Window::NONE,
@@ -157,9 +156,9 @@ pub fn new_profile_setup_page(profile_tab: &ProfileTab) -> ToastOverlay {
     let error_toast = ToastOverlay::new();
     error_toast.set_child(Some(&page));
 
-    // When a Cargo.toml is chosen, set the path label, update the tab title, and enable the start profiling button
+    // When a Cargo.toml is chosen, set the path label, update the page view state, and enable the start profiling button
     cargo_toml_chooser.connect_response(clone!(
-        @weak profile_tab,
+        @weak page_view,
         @weak error_toast,
         @weak cargo_toml_path,
         @weak cargo_toml_row,
@@ -176,11 +175,11 @@ pub fn new_profile_setup_page(profile_tab: &ProfileTab) -> ToastOverlay {
 
 
                     let profile_name = path.file_name().unwrap().to_str().unwrap();
-                    profile_tab.set_data(ProfileTabState::Setup, profile_name);
+                    page_view.set_data(ProfilePageViewState::Setup, profile_name);
                     cargo_toml_path.set_label(path_str);
                     start_profiling_button.set_sensitive(true);
                 } else {
-                    error_toast.add_toast(&Toast::new("Error: Project path is not valid UTF-8"));
+                    error_toast.add_toast(&Toast::new("Error: Cargo.toml path is not valid UTF-8"));
                 }
             }
         }
@@ -197,12 +196,12 @@ pub fn new_profile_setup_page(profile_tab: &ProfileTab) -> ToastOverlay {
         cargo_toml_chooser.show();
     });
 
-    // When a .perf.json is chosen, switch the tab to ProfilePage
-    profile_chooser.connect_response(clone!(@weak profile_tab =>
+    // When a .perf.json is chosen, switch the page view to ProfilePage
+    profile_chooser.connect_response(clone!(@weak page_view =>
         move |profile_chooser, response| {
         if response == ResponseType::Accept {
             let profile_path = profile_chooser.file().unwrap().path().unwrap();
-            profile_tab.switch_to_profile_page(&profile_path);
+            page_view.switch_to_profile_page(&profile_path);
         }
     }));
     open_profile_button.connect_clicked(move |open_profile_button| {
@@ -217,11 +216,11 @@ pub fn new_profile_setup_page(profile_tab: &ProfileTab) -> ToastOverlay {
         profile_chooser.show();
     });
 
-    // When start profiling is clicked: Build project, run perf, convert to .perf.json, and then switch the tab to ProfilePage
+    // When start profiling is clicked: Build project, run perf, convert to .perf.json, and then switch the page view to ProfilePage
     start_profiling_button.connect_clicked(clone!(
         @weak page,
         @weak error_toast,
-        @weak profile_tab,
+        @weak page_view,
         @weak cargo_toml_path,
         @weak cargo_build_entry,
         @weak perf_command_entry,
@@ -248,17 +247,17 @@ pub fn new_profile_setup_page(profile_tab: &ProfileTab) -> ToastOverlay {
                 .replace("${PROGRAM_ARGUMENTS}", &program_arguments_entry.text());
             let perf_convert_command = format!("perf data convert --input {perf_file} --to-json {profile}");
 
-            MainContext::default().spawn_local(clone!(@weak page, @weak error_toast, @weak profile_tab => async move {
-                let profiling_result = start_profiling(&project_directory, &cargo_build_command, perf_command, &perf_convert_command, &profile_tab).await;
+            MainContext::default().spawn_local(clone!(@weak page, @weak error_toast, @weak page_view => async move {
+                let profiling_result = start_profiling(&project_directory, &cargo_build_command, perf_command, &perf_convert_command, &page_view).await;
                 match profiling_result {
                     Ok(_) => {
                         let mut profile_path = project_directory;
                         profile_path.push(profile);
-                        profile_tab.switch_to_profile_page(&profile_path);
+                        page_view.switch_to_profile_page(&profile_path);
                     },
                     Err(error) => {
                         let profile_name = project_directory.file_name().unwrap().to_str().unwrap();
-                        profile_tab.set_data(ProfileTabState::Setup, profile_name);
+                        page_view.set_data(ProfilePageViewState::Setup, profile_name);
                         page.set_sensitive(true);
                         error_toast.add_toast(&Toast::new(&format!("{error}")));
                         return;
@@ -280,15 +279,18 @@ async fn start_profiling(
     cargo_build_command: &str,
     mut perf_command: String,
     perf_convert_command: &str,
-    profile_tab: &ProfileTab,
+    page_view: &ProfilePageView,
 ) -> Result<(), Box<dyn Error>> {
+    // Set page view state to compiling
     let profile_name = project_directory.file_name().unwrap().to_str().unwrap();
-    profile_tab.set_data(ProfileTabState::SetupCompilingProgram, profile_name);
+    page_view.set_data(ProfilePageViewState::SetupCompilingProgram, profile_name);
 
+    // Run cargo build
     let cargo_build_output = run_command(&cargo_build_command, &project_directory, true)
         .await
         .map_err(|error| format!("Failed to compile project: {error}"))?;
 
+    // Determine path of binary cargo built by parsing cargo build's output
     let mut program_path = None;
     for compiler_message in Deserializer::from_slice(&cargo_build_output).into_iter::<Value>() {
         let compiler_message = compiler_message
@@ -304,27 +306,30 @@ async fn start_profiling(
     let program_path = program_path
         .ok_or::<Box<dyn Error>>("Failed to find program path in compiler output".into())?;
 
+    // Set page view state to profiling
     let profile_name = program_path.file_name().unwrap().to_str().unwrap();
-    profile_tab.set_data(ProfileTabState::SetupProfilingProgram, profile_name);
+    page_view.set_data(ProfilePageViewState::SetupProfilingProgram, profile_name);
 
+    // Run perf and then convert profile to json
     run_command(&perf_command, &project_directory, false)
         .await
         .map_err(|error| format!("Failed to profile project: {error}"))?;
     run_command(&perf_convert_command, &project_directory, false)
         .await
         .map_err(|error| format!("Failed to convert profile: {error}"))?;
-    // TODO: Delete .perf.data
+    // TODO: Delete .perf.data?
 
     Ok(())
 }
 
-// TODO: Handle killing the subprocess when the parent dies
+// TODO: Handle killing when the window is closed
 // TODO: Don't return a buffer of stdout, instead take a callback to process a stream?
 async fn run_command(
     command_text: &str,
     current_working_directory: &Path,
     get_stdout: bool,
 ) -> Result<Vec<u8>, GError> {
+    // Create the subprocess
     let subprocess = SubprocessLauncher::new(if get_stdout {
         SubprocessFlags::STDOUT_PIPE
     } else {
@@ -332,6 +337,7 @@ async fn run_command(
     });
     subprocess.set_cwd(current_working_directory);
 
+    // Parse command text into environment variables + command + arguments
     let mut command = Vec::new();
     let mut parsing_flags = true;
     for x in command_text.split(" ") {
@@ -344,12 +350,17 @@ async fn run_command(
         }
     }
 
+    // Launch the subprocess
     let subprocess = subprocess.spawn(&command)?;
+
+    // Collect the process's stdout if asked to
     let stdout = if get_stdout {
         read_all_from(subprocess.stdout_pipe().unwrap()).await?
     } else {
         Vec::new()
     };
+
+    // Wait for the process to end, and ensure it exited successfully
     subprocess.wait_check_future().await?;
 
     Ok(stdout)

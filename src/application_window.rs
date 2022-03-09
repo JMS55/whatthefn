@@ -1,4 +1,4 @@
-use crate::profile_tab::{ProfileTab, ProfileTabState};
+use crate::page_view::{ProfilePageView, ProfilePageViewState};
 use adw::traits::AdwApplicationWindowExt;
 use adw::{Application, ApplicationWindow, HeaderBar, TabBar, TabPage, TabView, WindowTitle};
 use glib::{clone, ObjectExt};
@@ -34,7 +34,7 @@ pub fn new_application_window(app: &Application, create_initial_tab: bool) -> Ta
 
     // Create an initial tab if this window was not launched by dragging a tab out of an existing window
     if create_initial_tab {
-        add_profile_tab(&tab_view);
+        add_new_profile_tab(&tab_view);
     }
 
     // Sync the window subtitle with the first tab's title
@@ -63,47 +63,47 @@ pub fn new_application_window(app: &Application, create_initial_tab: bool) -> Ta
 
     // Add a new tab when either button is pressed
     new_tab_button_small.connect_clicked(clone!(@weak tab_view => move |_|
-        add_profile_tab(&tab_view);
+        add_new_profile_tab(&tab_view);
     ));
     new_tab_button_large.connect_clicked(clone!(@weak tab_view => move |_|
-        add_profile_tab(&tab_view);
+        add_new_profile_tab(&tab_view);
     ));
 
     window.present();
     tab_view
 }
 
-fn add_profile_tab(tab_view: &TabView) {
+fn add_new_profile_tab(tab_view: &TabView) {
     // Add new tab to tab view
-    let profile_tab = ProfileTab::new();
-    let tab = tab_view.append(&profile_tab);
+    let page_view = ProfilePageView::new();
+    let tab = tab_view.append(&page_view);
     tab.set_title("Profile Setup");
     tab_view.set_selected_page(&tab);
 
     // Set tab props based on the page it's displaying
-    profile_tab.connect_notify_local(
+    page_view.connect_notify_local(
         None,
-        clone!(@weak tab => move |profile_tab, _| {
-            match (profile_tab.state(), profile_tab.profile_name()) {
-                (ProfileTabState::Setup, None) => {
+        clone!(@weak tab => move |page_view, _| {
+            match (page_view.state(), page_view.profile_name()) {
+                (ProfilePageViewState::Setup, None) => {
                     tab.set_title("Profile Setup");
                 },
-                (ProfileTabState::Setup, Some(profile_name)) => {
+                (ProfilePageViewState::Setup, Some(profile_name)) => {
                     tab.set_title(&format!("Profile Setup - {profile_name}"));
                 },
-                (ProfileTabState::SetupCompilingProgram, Some(profile_name)) => {
+                (ProfilePageViewState::SetupCompilingProgram, Some(profile_name)) => {
                     tab.set_title(&format!("Compiling - {profile_name}"));
                     tab.set_loading(true);
                 },
-                (ProfileTabState::SetupProfilingProgram, Some(profile_name)) => {
+                (ProfilePageViewState::SetupProfilingProgram, Some(profile_name)) => {
                     tab.set_title(&format!("Profiling - {profile_name}"));
                     tab.set_loading(true);
                 },
-                (ProfileTabState::LoadingProfile, Some(profile_name)) => {
+                (ProfilePageViewState::LoadingProfile, Some(profile_name)) => {
                     tab.set_title(&profile_name);
                     tab.set_loading(true);
                 },
-                (ProfileTabState::Profile, Some(profile_name)) => {
+                (ProfilePageViewState::Profile, Some(profile_name)) => {
                     tab.set_title(&profile_name);
                     tab.set_loading(true);
                     tab.set_needs_attention(!tab.is_selected());
