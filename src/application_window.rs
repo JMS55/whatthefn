@@ -58,40 +58,13 @@ impl ApplicationWindowPrivate {
         // Add new tab to tab view
         let page_view = ProfilePageView::new();
         let tab = self.tab_view.append(&page_view);
-        tab.set_title("Profile Setup");
+        set_tab_props(&tab, &page_view);
         self.tab_view.set_selected_page(&tab);
 
-        // Set tab props based on the page it's displaying
+        // Update tab properties whenever its ProfilePageView changes
         page_view.connect_notify_local(
             None,
-            clone!(@weak tab => move |page_view, _| {
-                match (page_view.state(), page_view.profile_name()) {
-                    (ProfilePageViewState::Setup, None) => {
-                        tab.set_title("Profile Setup");
-                    },
-                    (ProfilePageViewState::Setup, Some(profile_name)) => {
-                        tab.set_title(&format!("Profile Setup - {profile_name}"));
-                    },
-                    (ProfilePageViewState::SetupCompilingProgram, Some(profile_name)) => {
-                        tab.set_title(&format!("Compiling - {profile_name}"));
-                        tab.set_loading(true);
-                    },
-                    (ProfilePageViewState::SetupProfilingProgram, Some(profile_name)) => {
-                        tab.set_title(&format!("Profiling - {profile_name}"));
-                        tab.set_loading(true);
-                    },
-                    (ProfilePageViewState::LoadingProfile, Some(profile_name)) => {
-                        tab.set_title(&profile_name);
-                        tab.set_loading(true);
-                    },
-                    (ProfilePageViewState::Profile, Some(profile_name)) => {
-                        tab.set_title(&profile_name);
-                        tab.set_loading(true);
-                        tab.set_needs_attention(!tab.is_selected());
-                    },
-                    _ => unreachable!(),
-                }
-            }),
+            clone!(@weak tab => move |page_view, _| set_tab_props(&tab, page_view)),
         );
 
         // Remove needs-attention from a tab once clicked
@@ -115,6 +88,36 @@ impl ApplicationWindowPrivate {
         let application = self.instance().application().unwrap();
         let window = ApplicationWindow::new(&application, false);
         window.imp().tab_view.get()
+    }
+}
+
+// Set tab properties based on the page its ProfilePageView is displaying
+fn set_tab_props(tab: &TabPage, page_view: &ProfilePageView) {
+    match (page_view.state(), page_view.profile_name()) {
+        (ProfilePageViewState::Setup, None) => {
+            tab.set_title("Profile Setup");
+        }
+        (ProfilePageViewState::Setup, Some(profile_name)) => {
+            tab.set_title(&format!("Profile Setup - {profile_name}"));
+        }
+        (ProfilePageViewState::SetupCompilingProgram, Some(profile_name)) => {
+            tab.set_title(&format!("Compiling - {profile_name}"));
+            tab.set_loading(true);
+        }
+        (ProfilePageViewState::SetupProfilingProgram, Some(profile_name)) => {
+            tab.set_title(&format!("Profiling - {profile_name}"));
+            tab.set_loading(true);
+        }
+        (ProfilePageViewState::LoadingProfile, Some(profile_name)) => {
+            tab.set_title(&profile_name);
+            tab.set_loading(true);
+        }
+        (ProfilePageViewState::Profile, Some(profile_name)) => {
+            tab.set_title(&profile_name);
+            tab.set_loading(true);
+            tab.set_needs_attention(!tab.is_selected());
+        }
+        _ => unreachable!(),
     }
 }
 
