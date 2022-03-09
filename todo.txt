@@ -1,13 +1,5 @@
-Instead of window title being WhatTheFn, maybe make it the project name? (and WhatTheFn when no project yet)
-    Tab widget is subclass with state property and project name property
-    WindowTitle binds to selected_page->child->project_name, WhatTheFn if not yet set
-    WindowSubtitle binds to selected_page->child->state
-Fix ProfileTab states
-    Setup->Compiling or LoadingProfile
-    Compiling->Profiling->LoadingProfile
-    LoadingProfile->Profile
-Finish ProfileSetupPage
 Write ProfilePage
+Finish ProfileSetupPage
 Switch to subclassing and UI files
 
 

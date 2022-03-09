@@ -1,6 +1,6 @@
-use crate::profile_tab::{switch_tab_to_profile_page, update_tab_to_setup};
+use crate::profile_tab::{ProfileTab, ProfileTabState};
 use adw::traits::{ActionRowExt, ExpanderRowExt, PreferencesGroupExt};
-use adw::{ActionRow, Bin, Clamp, ExpanderRow, PreferencesGroup, Toast, ToastOverlay};
+use adw::{ActionRow, Clamp, ExpanderRow, PreferencesGroup, Toast, ToastOverlay};
 use gio::prelude::InputStreamExtManual;
 use gio::traits::{FileExt, InputStreamExt};
 use gio::{InputStream, SubprocessFlags, SubprocessLauncher};
@@ -19,7 +19,9 @@ const PERF_COMMAND: &str =
     "perf record --freq 99 --call-graph dwarf --output=${TMP_FILE} ${PROGRAM} ${PROGRAM_ARGUMENTS}";
 const CARGO_BUILD_COMMAND: &str = "RUSTFLAGS=-g cargo build --release --message-format=json";
 
-pub fn new_profile_setup_page(profile_tab: &Bin) -> ToastOverlay {
+// TODO: Add comments
+
+pub fn new_profile_setup_page(profile_tab: &ProfileTab) -> ToastOverlay {
     let cargo_toml_path = Label::builder()
         .css_classes(vec!["dim-label".to_owned()])
         .build();
@@ -172,7 +174,9 @@ pub fn new_profile_setup_page(profile_tab: &Bin) -> ToastOverlay {
                     start_profiling_button.add_css_class("green_button");
                     open_profile_button.remove_css_class("blue_button");
 
-                    // TODO: Update tab title
+
+                    let profile_name = path.file_name().unwrap().to_str().unwrap();
+                    profile_tab.set_data(ProfileTabState::Setup, profile_name);
                     cargo_toml_path.set_label(path_str);
                     start_profiling_button.set_sensitive(true);
                 } else {
@@ -198,7 +202,7 @@ pub fn new_profile_setup_page(profile_tab: &Bin) -> ToastOverlay {
         move |profile_chooser, response| {
         if response == ResponseType::Accept {
             let profile_path = profile_chooser.file().unwrap().path().unwrap();
-            switch_tab_to_profile_page(&profile_tab, &profile_path);
+            profile_tab.switch_to_profile_page(&profile_path);
         }
     }));
     open_profile_button.connect_clicked(move |open_profile_button| {
@@ -234,9 +238,9 @@ pub fn new_profile_setup_page(profile_tab: &Bin) -> ToastOverlay {
             page.set_sensitive(false);
 
             let project_directory = PathBuf::from(&cargo_toml_path.label());
-            let project_name = project_directory.file_name().unwrap().to_str().unwrap();
-            let perf_file = format!("{project_name}:{prefix}.perf.data");
-            let profile = format!("{project_name}:{prefix}.perf.json");
+            let profile_name = project_directory.file_name().unwrap().to_str().unwrap();
+            let perf_file = format!("{profile_name}:{prefix}.perf.data");
+            let profile = format!("{profile_name}:{prefix}.perf.json");
 
             let cargo_build_command = cargo_build_entry.text();
             let perf_command = perf_command_entry.text()
@@ -250,10 +254,11 @@ pub fn new_profile_setup_page(profile_tab: &Bin) -> ToastOverlay {
                     Ok(_) => {
                         let mut profile_path = project_directory;
                         profile_path.push(profile);
-                        switch_tab_to_profile_page(&profile_tab, &profile_path);
+                        profile_tab.switch_to_profile_page(&profile_path);
                     },
                     Err(error) => {
-                        update_tab_to_setup(&profile_tab);
+                        let profile_name = project_directory.file_name().unwrap().to_str().unwrap();
+                        profile_tab.set_data(ProfileTabState::Setup, profile_name);
                         page.set_sensitive(true);
                         error_toast.add_toast(&Toast::new(&format!("{error}")));
                         return;
@@ -275,30 +280,33 @@ async fn start_profiling(
     cargo_build_command: &str,
     mut perf_command: String,
     perf_convert_command: &str,
-    profile_tab: &Bin,
+    profile_tab: &ProfileTab,
 ) -> Result<(), Box<dyn Error>> {
-    // TODO: Update tab to compiling
+    let profile_name = project_directory.file_name().unwrap().to_str().unwrap();
+    profile_tab.set_data(ProfileTabState::SetupCompilingProgram, profile_name);
+
     let cargo_build_output = run_command(&cargo_build_command, &project_directory, true)
         .await
         .map_err(|error| format!("Failed to compile project: {error}"))?;
 
-    let mut found = false;
+    let mut program_path = None;
     for compiler_message in Deserializer::from_slice(&cargo_build_output).into_iter::<Value>() {
         let compiler_message = compiler_message
             .map_err(|error| format!("Failed to parse compiler output: {error}"))?;
         if let Some(executable) = compiler_message.get("executable") {
-            if let Some(program_path) = executable.as_str() {
-                perf_command = perf_command.replace("${PROGRAM}", program_path);
-                found = true;
+            if let Some(prog_path) = executable.as_str() {
+                perf_command = perf_command.replace("${PROGRAM}", prog_path);
+                program_path = Some(PathBuf::from(prog_path));
                 break;
             }
         }
     }
-    if !found {
-        return Err("Failed to find program path in compiler output".into());
-    }
+    let program_path = program_path
+        .ok_or::<Box<dyn Error>>("Failed to find program path in compiler output".into())?;
 
-    // TODO: Update tab to profiling
+    let profile_name = program_path.file_name().unwrap().to_str().unwrap();
+    profile_tab.set_data(ProfileTabState::SetupProfilingProgram, profile_name);
+
     run_command(&perf_command, &project_directory, false)
         .await
         .map_err(|error| format!("Failed to profile project: {error}"))?;

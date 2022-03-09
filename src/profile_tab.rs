@@ -1,60 +1,129 @@
-use crate::profile_page::new_profile_page;
 use crate::profile_setup_page::new_profile_setup_page;
+use adw::subclass::prelude::{BinImpl, ObjectImpl, ObjectSubclass};
 use adw::traits::BinExt;
-use adw::{Bin, TabView};
-use glib::clone;
-use gtk::traits::WidgetExt;
+use adw::Bin;
+use glib::{
+    object_subclass, Enum as GEnum, Object, ObjectExt, ParamFlags, ParamSpec, ParamSpecEnum,
+    ParamSpecString, StaticType, ToValue, Value,
+};
+use gtk::subclass::prelude::WidgetImpl;
+use gtk::{Accessible, Buildable, ConstraintTarget, Widget};
+use once_cell::sync::Lazy;
+use std::cell::RefCell;
 use std::path::Path;
 
-// TODO: Are we actually going to use profile_loading?
+glib::wrapper! {
+    pub struct ProfileTab(ObjectSubclass<ProfileTabPrivate>)
+    @extends Bin, Widget,
+    @implements Accessible, Buildable, ConstraintTarget;
+}
 
-pub fn add_new_tab(tab_view: &TabView) {
-    // Create tab with initial page
-    let profile_tab = Bin::new();
-    let profile_setup_page = new_profile_setup_page(&profile_tab);
-    profile_tab.set_child(Some(&profile_setup_page));
+impl ProfileTab {
+    pub fn new() -> Self {
+        let profile_tab = Object::new(&[]).unwrap();
+        let initial_page = new_profile_setup_page(&profile_tab);
+        profile_tab.set_child(Some(&initial_page));
+        profile_tab
+    }
 
-    // Add tab to tab view
-    let tab = tab_view.append(&profile_tab);
-    tab_view.set_selected_page(&tab);
-    tab.set_title("Profile Setup");
+    pub fn switch_to_profile_page(&self, profile_path: &Path) {
+        todo!()
+    }
 
-    // Set tab props based on the page it's displaying
-    profile_tab.connect_name_notify(clone!(@weak tab => move |profile_tab| {
-        match profile_tab.widget_name().split_once(",") {
-            None if profile_tab.widget_name() == "setup" => {
-                tab.set_title("Profile Setup");
-            }
-            Some(("profiling", program_name)) => {
-                tab.set_title(&format!("Profiling - {program_name}"));
-            }
-            Some(("profile_loading", profile_name)) => {
-                tab.set_title(profile_name);
-                tab.set_loading(true);
-            }
-            Some(("profile", profile_name)) => {
-                tab.set_title(profile_name);
-                tab.set_loading(false);
-                tab.set_needs_attention(!tab.is_selected());
-            }
-            _ => unreachable!()
+    pub fn set_data(&self, state: ProfileTabState, profile_name: &str) {
+        self.set_profile_name(profile_name);
+        self.set_state(state);
+    }
+
+    pub fn profile_name(&self) -> Option<String> {
+        self.property("profile-name")
+    }
+
+    pub fn set_profile_name(&self, profile_name: &str) {
+        self.set_property("profile-name", profile_name);
+    }
+
+    pub fn state(&self) -> ProfileTabState {
+        self.property("state")
+    }
+
+    pub fn set_state(&self, state: ProfileTabState) {
+        self.set_property("state", state);
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, GEnum)]
+#[enum_type(name = "WtfProfileTabState")]
+pub enum ProfileTabState {
+    Setup,
+    SetupCompilingProgram,
+    SetupProfilingProgram,
+    LoadingProfile,
+    Profile,
+}
+
+impl Default for ProfileTabState {
+    fn default() -> Self {
+        Self::Setup
+    }
+}
+
+// ------------------------------------------------------------------------------
+
+#[derive(Default)]
+pub struct ProfileTabPrivate {
+    state: RefCell<ProfileTabState>,
+    profile_name: RefCell<Option<String>>,
+}
+
+#[object_subclass]
+impl ObjectSubclass for ProfileTabPrivate {
+    const NAME: &'static str = "WtfProfileTab";
+    type Type = ProfileTab;
+    type ParentType = Bin;
+    type Interfaces = ();
+}
+
+impl ObjectImpl for ProfileTabPrivate {
+    fn properties() -> &'static [ParamSpec] {
+        static PROPERTIES: Lazy<[ParamSpec; 2]> = Lazy::new(|| {
+            [
+                ParamSpecEnum::new(
+                    "state",
+                    "State",
+                    "Which page the tab is on and what it is doing",
+                    ProfileTabState::static_type(),
+                    ProfileTabState::default() as i32,
+                    ParamFlags::READWRITE,
+                ),
+                ParamSpecString::new(
+                    "profile-name",
+                    "ProfileName",
+                    "Name of the profile the tab is operating on",
+                    None,
+                    ParamFlags::READWRITE,
+                ),
+            ]
+        });
+        PROPERTIES.as_ref()
+    }
+
+    fn set_property(&self, _obj: &Self::Type, _id: usize, value: &Value, pspec: &ParamSpec) {
+        match pspec.name() {
+            "state" => *self.state.borrow_mut() = value.get().unwrap(),
+            "profile-name" => *self.profile_name.borrow_mut() = value.get().unwrap(),
+            _ => unreachable!(),
         }
-    }));
+    }
 
-    // Remove needs-attention from a tab once clicked
-    tab.connect_selected_notify(|tab| tab.set_needs_attention(false));
+    fn property(&self, _obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> Value {
+        match pspec.name() {
+            "state" => self.state.borrow().to_value(),
+            "profile-name" => self.profile_name.borrow().to_value(),
+            _ => unreachable!(),
+        }
+    }
 }
 
-pub fn update_tab_to_setup(profile_tab: &Bin) {
-    profile_tab.set_widget_name("setup");
-}
-
-pub fn update_tab_to_profiling(profile_tab: &Bin, profile_name: &str) {
-    profile_tab.set_widget_name(&format!("profiling,{profile_name}"));
-}
-
-pub fn switch_tab_to_profile_page(profile_tab: &Bin, profile_path: &Path) {
-    profile_tab.set_child(Some(&new_profile_page()));
-    // TODO: Should be loading profile initially?
-    profile_tab.set_widget_name("profile,SampleProfileTODO");
-}
+impl WidgetImpl for ProfileTabPrivate {}
+impl BinImpl for ProfileTabPrivate {}
