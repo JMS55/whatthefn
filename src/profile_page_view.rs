@@ -1,7 +1,8 @@
 use crate::profile_setup_page::new_profile_setup_page;
-use adw::subclass::prelude::{BinImpl, ObjectImpl, ObjectSubclass};
+use adw::subclass::prelude::BinImpl;
 use adw::traits::BinExt;
 use adw::Bin;
+use glib::subclass::prelude::{ObjectImpl, ObjectSubclass};
 use glib::{
     object_subclass, Enum as GEnum, Object, ObjectExt, ParamFlags, ParamSpec, ParamSpecEnum,
     ParamSpecString, StaticType, ToValue, Value,
@@ -52,7 +53,7 @@ impl ProfilePageView {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, GEnum)]
+#[derive(GEnum, Clone, Copy, PartialEq, Eq)]
 #[enum_type(name = "WtfProfilePageViewState")]
 pub enum ProfilePageViewState {
     Setup,
@@ -81,7 +82,6 @@ impl ObjectSubclass for ProfilePageViewPrivate {
     const NAME: &'static str = "WtfProfilePageView";
     type Type = ProfilePageView;
     type ParentType = Bin;
-    type Interfaces = ();
 }
 
 impl ObjectImpl for ProfilePageViewPrivate {

@@ -4,7 +4,7 @@ mod profile_page;
 mod profile_page_view;
 mod profile_setup_page;
 
-use crate::application_window::new_application_window;
+use crate::application_window::ApplicationWindow;
 use adw::Application;
 use gtk::prelude::{ApplicationExt, ApplicationExtManual};
 
@@ -16,7 +16,7 @@ fn main() {
         .build();
 
     app.connect_activate(|app| {
-        new_application_window(app, true);
+        ApplicationWindow::new(app, true);
     });
 
     app.run();

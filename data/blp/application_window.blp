@@ -1,0 +1,52 @@
+using Gtk 4.0;
+using Adw 1;
+
+template WtfApplicationWindow : Adw.ApplicationWindow {
+    default-width: 685;
+    default-height: 385;
+
+    content: Gtk.Box {
+        orientation: vertical;
+        spacing: 0;
+
+        Adw.HeaderBar {
+
+            [start]
+            Gtk.Button new_tab_button {
+                icon-name: "plus-large-symbolic";
+                clicked => add_new_tab() swapped;
+            }
+
+            title-widget: Gtk.Stack header_stack {
+                hexpand: true;
+
+                Gtk.StackPage {
+                    name: "title";
+
+                    child: Adw.WindowTitle title {
+                        title: "WhatTheFn";
+                    };
+                }
+
+                Gtk.StackPage {
+                    name: "tabs";
+
+                    child: Adw.TabBar {
+                        styles ["inline"]
+                        view: tab_view;
+                        notify::tabs-revealed => swap_header_widgets() swapped;
+
+                        end-action-widget: Gtk.Button {
+                            icon-name: "plus-symbolic";
+                            clicked => add_new_tab() swapped;
+                        };
+                    };
+                }
+            };
+        }
+
+        Adw.TabView tab_view {
+            create-window => create_window_for_detached_tab() swapped;
+        }
+    };
+}

@@ -1,6 +1,6 @@
+Use subclassing and blueprints for ProfileSetupPage
 Write ProfilePage
 Finish ProfileSetupPage
-Switch to subclassing and UI files
 
 
 
