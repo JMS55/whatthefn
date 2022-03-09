@@ -1,4 +1,4 @@
-use crate::page_view::{ProfilePageView, ProfilePageViewState};
+use crate::profile_page_view::{ProfilePageView, ProfilePageViewState};
 use adw::traits::{ActionRowExt, ExpanderRowExt, PreferencesGroupExt};
 use adw::{ActionRow, Clamp, ExpanderRow, PreferencesGroup, Toast, ToastOverlay};
 use gio::prelude::InputStreamExtManual;

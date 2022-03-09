@@ -1,4 +1,4 @@
-use crate::page_view::{ProfilePageView, ProfilePageViewState};
+use crate::profile_page_view::{ProfilePageView, ProfilePageViewState};
 use adw::traits::AdwApplicationWindowExt;
 use adw::{Application, ApplicationWindow, HeaderBar, TabBar, TabPage, TabView, WindowTitle};
 use glib::{clone, ObjectExt};
