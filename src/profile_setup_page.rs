@@ -4,11 +4,9 @@ use adw::{ActionRow, Bin, Clamp, Toast, ToastOverlay};
 use gio::prelude::InputStreamExtManual;
 use gio::traits::{FileExt, InputStreamExt};
 use gio::{InputStream, SubprocessFlags, SubprocessLauncher};
-use glib::subclass::prelude::{ObjectImpl, ObjectSubclass, ObjectSubclassExt, ObjectSubclassIsExt};
+use glib::subclass::prelude::{ObjectImpl, ObjectSubclass, ObjectSubclassExt};
 use glib::subclass::types::InitializingObject;
-use glib::{
-    clone, object_subclass, BoolError, Cast, DateTime, Error as GError, Object, PRIORITY_DEFAULT,
-};
+use glib::{object_subclass, BoolError, Cast, DateTime, Error as GError, Object, PRIORITY_DEFAULT};
 use gtk::prelude::{InitializingWidgetExt, NativeDialogExtManual};
 use gtk::subclass::prelude::{
     CompositeTemplateCallbacksClass, CompositeTemplateClass, WidgetClassSubclassExt, WidgetImpl,
@@ -68,25 +66,25 @@ impl ProfileSetupPagePrivate {
     // When a Cargo.toml is chosen, set the path label, update the page view state, and enable the start profiling button
     #[template_callback]
     async fn select_cargo_toml(&self) {
-        let this = self.instance();
-        let f = clone!(@weak this => move |mut cargo_toml_path: PathBuf| {
+        let cargo_toml_path = self
+            .get_file_from_user("Select a Cargo.toml", "Cargo.toml")
+            .await;
+        if let Some(mut cargo_toml_path) = cargo_toml_path {
             cargo_toml_path.pop();
-            let this = this.imp();
             if let Some(path_str) = cargo_toml_path.to_str() {
-                this.cargo_toml_row.add_css_class("success-row");
-                this.start_profiling_button.add_css_class("green-button");
-                this.open_profile_button.remove_css_class("blue-button");
+                self.cargo_toml_row.add_css_class("success-row");
+                self.start_profiling_button.add_css_class("green-button");
+                self.open_profile_button.remove_css_class("blue-button");
 
                 let profile_name = cargo_toml_path.file_name().unwrap().to_str().unwrap();
-                this.page_view().set_data(ProfilePageViewState::Setup, profile_name);
-                this.cargo_toml_path.set_label(path_str);
-                this.start_profiling_button.set_sensitive(true);
+                self.page_view()
+                    .set_data(ProfilePageViewState::Setup, profile_name);
+                self.cargo_toml_path.set_label(path_str);
+                self.start_profiling_button.set_sensitive(true);
             } else {
-                this.add_error_toast("Error: Cargo.toml path is not valid UTF-8");
+                self.add_error_toast("Error: Cargo.toml path is not valid UTF-8");
             }
-        });
-        self.get_file_from_user("Select a Cargo.toml", "Cargo.toml", f)
-            .await;
+        }
     }
 
     // Build project, run perf, convert to .perf.json, and then switch the page view to ProfilePage
@@ -142,22 +140,19 @@ impl ProfileSetupPagePrivate {
     // When a .perf.json is chosen, switch the page view to ProfilePage
     #[template_callback]
     async fn open_existing_profile(&self) {
-        let page_view = self.page_view();
-        self.get_file_from_user(
-            "Select a .perf.json",
-            "*.perf.json",
-            clone!(@weak page_view => move |profile_path| page_view.switch_to_profile_page(&profile_path)),
-        ).await;
+        let profile_path = self
+            .get_file_from_user("Select a .perf.json", "*.perf.json")
+            .await;
+        if let Some(profile_path) = profile_path {
+            self.page_view().switch_to_profile_page(&profile_path);
+        }
     }
 
-    async fn get_file_from_user<F>(
+    async fn get_file_from_user(
         &self,
         file_chooser_title: &str,
         file_filter_pattern: &str,
-        file_path_handler: F,
-    ) where
-        F: Fn(PathBuf) + 'static,
-    {
+    ) -> Option<PathBuf> {
         let parent_window = self
             .instance()
             .root()
@@ -179,14 +174,12 @@ impl ProfileSetupPagePrivate {
         file_filter.add_pattern(file_filter_pattern);
         file_chooser.add_filter(&file_filter);
 
-        file_chooser.connect_response(move |file_chooser, response| {
-            if response == ResponseType::Accept {
-                let file_path = file_chooser.file().unwrap().path().unwrap();
-                (file_path_handler)(file_path);
-            }
-        });
-
-        file_chooser.run_future().await;
+        let response = file_chooser.run_future().await;
+        if response == ResponseType::Accept {
+            file_chooser.file().unwrap().path()
+        } else {
+            None
+        }
     }
 
     fn add_error_toast(&self, error_message: &str) {
