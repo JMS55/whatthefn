@@ -1,280 +1,208 @@
 use crate::profile_page_view::{ProfilePageView, ProfilePageViewState};
-use adw::traits::{ActionRowExt, ExpanderRowExt, PreferencesGroupExt};
-use adw::{ActionRow, Clamp, ExpanderRow, PreferencesGroup, Toast, ToastOverlay};
+use adw::subclass::prelude::BinImpl;
+use adw::{ActionRow, Bin, Clamp, Toast, ToastOverlay};
 use gio::prelude::InputStreamExtManual;
 use gio::traits::{FileExt, InputStreamExt};
 use gio::{InputStream, SubprocessFlags, SubprocessLauncher};
-use glib::{clone, BoolError, Cast, DateTime, Error as GError, MainContext, PRIORITY_DEFAULT};
-use gtk::traits::{BoxExt, ButtonExt, EditableExt, FileChooserExt, NativeDialogExt, WidgetExt};
+use glib::subclass::prelude::{ObjectImpl, ObjectSubclass, ObjectSubclassExt, ObjectSubclassIsExt};
+use glib::subclass::types::InitializingObject;
+use glib::{
+    clone, object_subclass, BoolError, Cast, DateTime, Error as GError, Object, PRIORITY_DEFAULT,
+};
+use gtk::prelude::{InitializingWidgetExt, NativeDialogExtManual};
+use gtk::subclass::prelude::{
+    CompositeTemplateCallbacksClass, CompositeTemplateClass, WidgetClassSubclassExt, WidgetImpl,
+};
+use gtk::traits::{EditableExt, FileChooserExt, NativeDialogExt, WidgetExt};
 use gtk::{
-    Align, Box as BoxWidget, Button, Entry, FileChooserAction, FileChooserNative, FileFilter,
-    Label, Orientation, ResponseType, Window,
+    template_callbacks, Accessible, Buildable, Button, CompositeTemplate, ConstraintTarget, Entry,
+    FileChooserAction, FileChooserNative, FileFilter, Label, ResponseType, TemplateChild, Widget,
+    Window,
 };
 use serde_json::{Deserializer, Value};
 use std::error::Error;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
-const PERF_COMMAND: &str =
-    "perf record --freq 99 --call-graph dwarf --output=${TMP_FILE} ${PROGRAM} ${PROGRAM_ARGUMENTS}";
-const CARGO_BUILD_COMMAND: &str = "RUSTFLAGS=-g cargo build --release --message-format=json";
+// TODO: There's a weird clipping issue with the focus indicator around the open/profile buttons
 
-pub fn new_profile_setup_page(page_view: &ProfilePageView) -> ToastOverlay {
-    let cargo_toml_path = Label::builder()
-        .css_classes(vec!["dim-label".to_owned()])
-        .build();
-    let cargo_toml_chooser_button = Button::builder()
-        .label("Select")
-        .valign(Align::Center)
-        .build();
+glib::wrapper! {
+    pub struct ProfileSetupPage(ObjectSubclass<ProfileSetupPagePrivate>)
+    @extends Bin, Widget,
+    @implements Accessible, Buildable, ConstraintTarget;
+}
 
-    let program_arguments_entry = Entry::builder()
-        .placeholder_text("No arguments")
-        .css_classes(vec!["monospace".to_owned()])
-        .valign(Align::Center)
-        .build();
-    let perf_command_entry = Entry::builder()
-        .text(PERF_COMMAND)
-        .css_classes(vec!["monospace".to_owned()])
-        .valign(Align::Center)
-        .build();
-    let cargo_build_entry = Entry::builder()
-        .text(CARGO_BUILD_COMMAND)
-        .css_classes(vec!["monospace".to_owned()])
-        .valign(Align::Center)
-        .build();
+impl ProfileSetupPage {
+    pub fn new() -> Self {
+        Object::new(&[]).unwrap()
+    }
+}
 
-    let start_profiling_button = Button::builder()
-        .label("Start Profiling")
-        .sensitive(false)
-        .css_classes(vec!["pill".to_owned(), "opaque".to_owned()])
-        .build();
-    let open_profile_button = Button::builder()
-        .label("Open Existing Profile")
-        .css_classes(vec![
-            "pill".to_owned(),
-            "opaque".to_owned(),
-            "blue_button".to_owned(),
-        ])
-        .build();
+// ------------------------------------------------------------------------------
 
-    let cargo_toml_row = ActionRow::builder()
-        .title("Cargo Project")
-        .subtitle("Select a Cargo.toml")
-        .build();
-    cargo_toml_row.add_suffix(&{
-        let container = BoxWidget::new(Orientation::Horizontal, 6);
-        container.append(&cargo_toml_path);
-        container.append(&cargo_toml_chooser_button);
-        container
-    });
+#[derive(CompositeTemplate, Default)]
+#[template(resource = "/com/github/jms55/WhatTheFn/ui/profile_setup_page.ui")]
+pub struct ProfileSetupPagePrivate {
+    #[template_child]
+    page: TemplateChild<Clamp>,
+    #[template_child]
+    error_toast: TemplateChild<ToastOverlay>,
+    #[template_child]
+    cargo_toml_row: TemplateChild<ActionRow>,
+    #[template_child]
+    cargo_toml_path: TemplateChild<Label>,
+    #[template_child]
+    start_profiling_button: TemplateChild<Button>,
+    #[template_child]
+    open_profile_button: TemplateChild<Button>,
+    #[template_child]
+    cargo_build_entry: TemplateChild<Entry>,
+    #[template_child]
+    perf_entry: TemplateChild<Entry>,
+    #[template_child]
+    program_arguments_entry: TemplateChild<Entry>,
+}
 
-    // TODO: Extract file chooser to seperate method, create in button callbacks dynamically
-    let cargo_toml_chooser = FileChooserNative::new(
-        Some("Select a Cargo.toml"),
-        Window::NONE,
-        FileChooserAction::Open,
-        None,
-        None,
-    );
-    let cargo_toml_filter = FileFilter::new();
-    cargo_toml_filter.set_name(Some("Cargo.toml"));
-    cargo_toml_filter.add_pattern("Cargo.toml");
-    cargo_toml_chooser.add_filter(&cargo_toml_filter);
-    let profile_chooser = FileChooserNative::new(
-        Some("Select a .perf.json"),
-        Window::NONE,
-        FileChooserAction::Open,
-        None,
-        None,
-    );
-    let profile_filter = FileFilter::new();
-    profile_filter.set_name(Some(".perf.json"));
-    profile_filter.add_pattern("*.perf.json");
-    profile_chooser.add_filter(&profile_filter);
-
-    let list = PreferencesGroup::builder()
-        .title("Setup Profile")
-        .description("Start profiling or open a previously recorded profile.")
-        .build();
-    list.add(&cargo_toml_row);
-    list.add(&{
-        let row = ActionRow::builder()
-            .title("Program arguments")
-            .subtitle("Arguments to pass to the program")
-            .build();
-        row.add_suffix(&program_arguments_entry);
-        row
-    });
-    list.add(&{
-        let row = ExpanderRow::builder()
-            .title("Advanced Options")
-            .subtitle("Configure commands")
-            .build();
-        row.add_row(&{
-            let row = ActionRow::builder()
-                .title("Perf")
-                .subtitle("Command for perf")
-                .build();
-            row.add_suffix(&perf_command_entry);
-            row
-        });
-        row.add_row(&{
-            let row = ActionRow::builder()
-                .title("Cargo Build")
-                .subtitle("Command for cargo build")
-                .build();
-            row.add_suffix(&cargo_build_entry);
-            row
-        });
-        row
-    });
-
-    let footer_box = BoxWidget::builder()
-        .orientation(Orientation::Horizontal)
-        .spacing(0)
-        .homogeneous(true)
-        .css_classes(vec!["linked".to_owned()])
-        .build();
-    footer_box.append(&start_profiling_button);
-    footer_box.append(&open_profile_button);
-
-    let content = BoxWidget::new(Orientation::Vertical, 18);
-    content.append(&list);
-    content.append(&footer_box);
-
-    let page = Clamp::builder()
-        .child(&content)
-        .hexpand(true)
-        .vexpand(true)
-        .margin_top(18)
-        .margin_bottom(18)
-        .margin_start(18)
-        .margin_end(18)
-        .build();
-
-    let error_toast = ToastOverlay::new();
-    error_toast.set_child(Some(&page));
-
+#[template_callbacks]
+impl ProfileSetupPagePrivate {
     // When a Cargo.toml is chosen, set the path label, update the page view state, and enable the start profiling button
-    cargo_toml_chooser.connect_response(clone!(
-        @weak page_view,
-        @weak error_toast,
-        @weak cargo_toml_path,
-        @weak cargo_toml_row,
-        @weak start_profiling_button,
-        @weak open_profile_button
-        => move |cargo_toml_chooser, response| {
-            if response == ResponseType::Accept {
-                let mut path = cargo_toml_chooser.file().unwrap().path().unwrap();
-                path.pop();
-                if let Some(path_str) = path.to_str() {
-                    cargo_toml_row.set_css_classes(&["success_row"]);
-                    start_profiling_button.add_css_class("green_button");
-                    open_profile_button.remove_css_class("blue_button");
+    #[template_callback]
+    async fn select_cargo_toml(&self) {
+        let this = self.instance();
+        let f = clone!(@weak this => move |mut cargo_toml_path: PathBuf| {
+            cargo_toml_path.pop();
+            let this = this.imp();
+            if let Some(path_str) = cargo_toml_path.to_str() {
+                this.cargo_toml_row.add_css_class("success-row");
+                this.start_profiling_button.add_css_class("green-button");
+                this.open_profile_button.remove_css_class("blue-button");
 
+                let profile_name = cargo_toml_path.file_name().unwrap().to_str().unwrap();
+                this.page_view().set_data(ProfilePageViewState::Setup, profile_name);
+                this.cargo_toml_path.set_label(path_str);
+                this.start_profiling_button.set_sensitive(true);
+            } else {
+                this.add_error_toast("Error: Cargo.toml path is not valid UTF-8");
+            }
+        });
+        self.get_file_from_user("Select a Cargo.toml", "Cargo.toml", f)
+            .await;
+    }
 
-                    let profile_name = path.file_name().unwrap().to_str().unwrap();
-                    page_view.set_data(ProfilePageViewState::Setup, profile_name);
-                    cargo_toml_path.set_label(path_str);
-                    start_profiling_button.set_sensitive(true);
-                } else {
-                    error_toast.add_toast(&Toast::new("Error: Cargo.toml path is not valid UTF-8"));
-                }
+    // Build project, run perf, convert to .perf.json, and then switch the page view to ProfilePage
+    #[template_callback]
+    async fn start_profiling(&self) {
+        let prefix = match get_prefix() {
+            Ok(prefix) => prefix,
+            Err(error) => {
+                self.add_error_toast(&format!("Failed to get current datetime: {error}"));
+                return;
+            }
+        };
+
+        self.page.set_sensitive(false);
+
+        let project_directory = PathBuf::from(&self.cargo_toml_path.label());
+        let profile_name = project_directory.file_name().unwrap().to_str().unwrap();
+        let perf_file = format!("{profile_name}:{prefix}.perf.data");
+        let profile = format!("{profile_name}:{prefix}.perf.json");
+        let cargo_build_command = self.cargo_build_entry.text();
+        let perf_command = self
+            .perf_entry
+            .text()
+            .replace("${TMP_FILE}", &perf_file)
+            .replace("${PROGRAM_ARGUMENTS}", &self.program_arguments_entry.text());
+        let perf_convert_command =
+            format!("perf data convert --input {perf_file} --to-json {profile}");
+        let page_view = self.page_view();
+
+        let profiling_result = build_and_profile(
+            &project_directory,
+            &cargo_build_command,
+            perf_command,
+            &perf_convert_command,
+            &page_view,
+        )
+        .await;
+        match profiling_result {
+            Ok(_) => {
+                let mut profile_path = project_directory;
+                profile_path.push(profile);
+                page_view.switch_to_profile_page(&profile_path);
+            }
+            Err(error) => {
+                let profile_name = project_directory.file_name().unwrap().to_str().unwrap();
+                page_view.set_data(ProfilePageViewState::Setup, profile_name);
+                self.page.set_sensitive(true);
+                self.add_error_toast(&format!("{error}"));
             }
         }
-    ));
-    cargo_toml_chooser_button.connect_clicked(move |cargo_toml_chooser_button| {
-        cargo_toml_chooser.set_transient_for(
-            cargo_toml_chooser_button
-                .root()
-                .map(Cast::downcast::<Window>)
-                .map(Result::ok)
-                .flatten()
-                .as_ref(),
-        );
-        cargo_toml_chooser.show();
-    });
+    }
 
     // When a .perf.json is chosen, switch the page view to ProfilePage
-    profile_chooser.connect_response(clone!(@weak page_view =>
-        move |profile_chooser, response| {
-        if response == ResponseType::Accept {
-            let profile_path = profile_chooser.file().unwrap().path().unwrap();
-            page_view.switch_to_profile_page(&profile_path);
-        }
-    }));
-    open_profile_button.connect_clicked(move |open_profile_button| {
-        profile_chooser.set_transient_for(
-            open_profile_button
-                .root()
-                .map(Cast::downcast::<Window>)
-                .map(Result::ok)
-                .flatten()
-                .as_ref(),
+    #[template_callback]
+    async fn open_existing_profile(&self) {
+        let page_view = self.page_view();
+        self.get_file_from_user(
+            "Select a .perf.json",
+            "*.perf.json",
+            clone!(@weak page_view => move |profile_path| page_view.switch_to_profile_page(&profile_path)),
+        ).await;
+    }
+
+    async fn get_file_from_user<F>(
+        &self,
+        file_chooser_title: &str,
+        file_filter_pattern: &str,
+        file_path_handler: F,
+    ) where
+        F: Fn(PathBuf) + 'static,
+    {
+        let parent_window = self
+            .instance()
+            .root()
+            .map(Cast::downcast::<Window>)
+            .map(Result::ok)
+            .flatten();
+
+        let file_chooser = FileChooserNative::new(
+            Some(file_chooser_title),
+            parent_window.as_ref(),
+            FileChooserAction::Open,
+            None,
+            None,
         );
-        profile_chooser.show();
-    });
+        file_chooser.set_modal(true);
 
-    // When start profiling is clicked: Build project, run perf, convert to .perf.json, and then switch the page view to ProfilePage
-    start_profiling_button.connect_clicked(clone!(
-        @weak page,
-        @weak error_toast,
-        @weak page_view,
-        @weak cargo_toml_path,
-        @weak cargo_build_entry,
-        @weak perf_command_entry,
-        @weak program_arguments_entry
-        => move |_| {
-            let prefix = match get_prefix() {
-                Ok(prefix) => prefix,
-                Err(error) => {
-                    error_toast.add_toast(&Toast::new(&format!("Failed to get current datetime: {error}")));
-                    return;
-                },
-            };
+        let file_filter = FileFilter::new();
+        file_filter.set_name(Some(file_filter_pattern));
+        file_filter.add_pattern(file_filter_pattern);
+        file_chooser.add_filter(&file_filter);
 
-            page.set_sensitive(false);
+        file_chooser.connect_response(move |file_chooser, response| {
+            if response == ResponseType::Accept {
+                let file_path = file_chooser.file().unwrap().path().unwrap();
+                (file_path_handler)(file_path);
+            }
+        });
 
-            let project_directory = PathBuf::from(&cargo_toml_path.label());
-            let profile_name = project_directory.file_name().unwrap().to_str().unwrap();
-            let perf_file = format!("{profile_name}:{prefix}.perf.data");
-            let profile = format!("{profile_name}:{prefix}.perf.json");
+        file_chooser.run_future().await;
+    }
 
-            let cargo_build_command = cargo_build_entry.text();
-            let perf_command = perf_command_entry.text()
-                .replace("${TMP_FILE}", &perf_file)
-                .replace("${PROGRAM_ARGUMENTS}", &program_arguments_entry.text());
-            let perf_convert_command = format!("perf data convert --input {perf_file} --to-json {profile}");
+    fn add_error_toast(&self, error_message: &str) {
+        self.error_toast.add_toast(&Toast::new(error_message));
+    }
 
-            MainContext::default().spawn_local(clone!(@weak page, @weak error_toast, @weak page_view => async move {
-                let profiling_result = start_profiling(&project_directory, &cargo_build_command, perf_command, &perf_convert_command, &page_view).await;
-                match profiling_result {
-                    Ok(_) => {
-                        let mut profile_path = project_directory;
-                        profile_path.push(profile);
-                        page_view.switch_to_profile_page(&profile_path);
-                    },
-                    Err(error) => {
-                        let profile_name = project_directory.file_name().unwrap().to_str().unwrap();
-                        page_view.set_data(ProfilePageViewState::Setup, profile_name);
-                        page.set_sensitive(true);
-                        error_toast.add_toast(&Toast::new(&format!("{error}")));
-                        return;
-                    },
-                }
-            }));
-        }
-    ));
-
-    error_toast
+    fn page_view(&self) -> ProfilePageView {
+        self.instance()
+            .parent()
+            .unwrap()
+            .downcast::<ProfilePageView>()
+            .unwrap()
+    }
 }
 
-fn get_prefix() -> Result<String, BoolError> {
-    Ok(DateTime::now_utc()?.format("%F:%T")?.to_string())
-}
-
-async fn start_profiling(
+async fn build_and_profile(
     project_directory: &Path,
     cargo_build_command: &str,
     mut perf_command: String,
@@ -384,3 +312,27 @@ async fn read_all_from(input_stream: InputStream) -> Result<Vec<u8>, GError> {
         }
     }
 }
+
+fn get_prefix() -> Result<String, BoolError> {
+    Ok(DateTime::now_utc()?.format("%F:%T")?.to_string())
+}
+
+#[object_subclass]
+impl ObjectSubclass for ProfileSetupPagePrivate {
+    const NAME: &'static str = "WtfProfileSetupPage";
+    type Type = ProfileSetupPage;
+    type ParentType = Bin;
+
+    fn class_init(klass: &mut Self::Class) {
+        klass.bind_template();
+        klass.bind_template_callbacks();
+    }
+
+    fn instance_init(obj: &InitializingObject<Self>) {
+        obj.init_template();
+    }
+}
+
+impl ObjectImpl for ProfileSetupPagePrivate {}
+impl WidgetImpl for ProfileSetupPagePrivate {}
+impl BinImpl for ProfileSetupPagePrivate {}

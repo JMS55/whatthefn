@@ -1,4 +1,3 @@
-Use subclassing and blueprints for ProfileSetupPage
 Write ProfilePage
 Finish ProfileSetupPage
 

@@ -2,12 +2,12 @@ use crate::profile_page_view::{ProfilePageView, ProfilePageViewState};
 use adw::subclass::prelude::AdwApplicationWindowImpl;
 use adw::{TabBar, TabPage, TabView, WindowTitle};
 use gio::{ActionGroup, ActionMap};
-use glib::subclass::prelude::ObjectImpl;
-use glib::subclass::types::{InitializingObject, ObjectSubclass};
+use glib::subclass::prelude::{ObjectImpl, ObjectSubclass};
+use glib::subclass::types::InitializingObject;
 use glib::{clone, object_subclass, IsA, Object, ObjectExt, ParamSpec};
 use gtk::prelude::{GObjectPropertyExpressionExt, InitializingWidgetExt};
 use gtk::subclass::prelude::{
-    ApplicationWindowImpl, CompositeTemplate, CompositeTemplateCallbacks, ObjectImplExt,
+    ApplicationWindowImpl, CompositeTemplateCallbacksClass, CompositeTemplateClass, ObjectImplExt,
     ObjectSubclassExt, ObjectSubclassIsExt, TemplateChild, WidgetClassSubclassExt, WidgetImpl,
     WindowImpl,
 };
@@ -73,7 +73,7 @@ impl ApplicationWindowPrivate {
 
     // Show tabs in headerbar only when there is more than 1 tab
     #[template_callback]
-    fn swap_header_widgets(&self, _: ParamSpec, tab_bar: &TabBar) {
+    fn swap_header_widgets(&self, _: &ParamSpec, tab_bar: &TabBar) {
         if tab_bar.is_tabs_revealed() {
             self.new_tab_button.hide();
             self.header_stack.set_visible_child_name("tabs");
@@ -84,7 +84,7 @@ impl ApplicationWindowPrivate {
     }
 
     #[template_callback]
-    fn create_window_for_detached_tab(&self, _: &TabView) -> TabView {
+    fn create_window_for_detached_tab(&self) -> TabView {
         let application = self.instance().application().unwrap();
         let window = ApplicationWindow::new(&application, false);
         window.imp().tab_view.get()
@@ -128,8 +128,8 @@ impl ObjectSubclass for ApplicationWindowPrivate {
     type ParentType = adw::ApplicationWindow;
 
     fn class_init(klass: &mut Self::Class) {
-        Self::bind_template(klass);
-        Self::bind_template_callbacks(klass);
+        klass.bind_template();
+        klass.bind_template_callbacks();
     }
 
     fn instance_init(obj: &InitializingObject<Self>) {

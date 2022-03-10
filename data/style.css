@@ -1,11 +1,11 @@
-row.success_row {
+row.success-row {
     background-color: @green_1;
 }
 
-button.blue_button {
+button.blue-button {
 	background-color: @blue_1;
 }
-button.green_button {
+button.green-button {
 	background-color: @green_1;
 }
 

@@ -1,0 +1,96 @@
+using Gtk 4.0;
+using Adw 1;
+
+template WtfProfileSetupPage : Adw.Bin {
+
+    Adw.ToastOverlay error_toast {
+
+        Adw.Clamp page {
+
+            Gtk.Box {
+                orientation: vertical;
+                spacing: 18;
+
+                Adw.PreferencesGroup {
+                    title: "Setup Profile";
+                    description: "Start profiling or open a previously recorded profile.";
+
+                    Adw.ActionRow cargo_toml_row {
+                        title: "Cargo Project";
+                        subtitle: "Select a Cargo.toml";
+
+                        Gtk.Box {
+                            spacing: 6;
+
+                            Gtk.Label cargo_toml_path {
+                                styles ["dim-label"]
+                            }
+
+                            Gtk.Button {
+                                label: "Select";
+                                valign: center;
+                                clicked => select_cargo_toml() swapped;
+                            }
+                        }
+                    }
+
+                    Adw.ActionRow {
+                        title: "Program arguments";
+                        subtitle: "Arguments to pass to the program";
+
+                        Gtk.Entry program_arguments_entry {
+                            placeholder-text: "No arguments";
+                            valign: center;
+                            styles ["monospace"]
+                        }
+                    }
+
+                    Adw.ExpanderRow {
+                        title: "Advanced Options";
+                        subtitle: "Configure commands";
+
+                        Adw.ActionRow {
+                            title: "Perf";
+                            subtitle: "Command for perf";
+
+                            Gtk.Entry perf_entry {
+                                text: "perf record --freq 99 --call-graph dwarf --output=${TMP_FILE} ${PROGRAM} ${PROGRAM_ARGUMENTS}";
+                                valign: center;
+                                styles ["monospace"]
+                            }
+                        }
+
+                        Adw.ActionRow {
+                            title: "Cargo Build";
+                            subtitle: "Command for cargo build";
+
+                            Gtk.Entry cargo_build_entry {
+                                text: "RUSTFLAGS=-g cargo build --release --message-format=json";
+                                valign: center;
+                                styles ["monospace"]
+                            }
+                        }
+                    }
+                }
+
+                Gtk.Box {
+                    homogeneous: true;
+                    styles ["linked"]
+
+                    Gtk.Button start_profiling_button {
+                        label: "Start Profiling";
+                        sensitive: false;
+                        styles ["pill", "opaque"]
+                        clicked => start_profiling() swapped;
+                    }
+
+                    Gtk.Button open_profile_button {
+                        label: "Open Existing Profile";
+                        styles ["pill", "opaque", "blue-button"]
+                        clicked => open_existing_profile() swapped;
+                    }
+                }
+            }
+        }
+    }
+}

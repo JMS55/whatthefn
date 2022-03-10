@@ -1,13 +1,14 @@
-use crate::profile_setup_page::new_profile_setup_page;
+use crate::profile_setup_page::ProfileSetupPage;
 use adw::subclass::prelude::BinImpl;
 use adw::traits::BinExt;
 use adw::Bin;
-use glib::subclass::prelude::{ObjectImpl, ObjectSubclass};
+use glib::subclass::prelude::{ObjectImpl, ObjectImplExt, ObjectSubclass};
 use glib::{
     object_subclass, Enum as GEnum, Object, ObjectExt, ParamFlags, ParamSpec, ParamSpecEnum,
     ParamSpecString, StaticType, ToValue, Value,
 };
 use gtk::subclass::prelude::WidgetImpl;
+use gtk::traits::WidgetExt;
 use gtk::{Accessible, Buildable, ConstraintTarget, Widget};
 use once_cell::sync::Lazy;
 use std::cell::RefCell;
@@ -21,10 +22,7 @@ glib::wrapper! {
 
 impl ProfilePageView {
     pub fn new() -> Self {
-        let page_view = Object::new(&[]).unwrap();
-        let initial_page = new_profile_setup_page(&page_view);
-        page_view.set_child(Some(&initial_page));
-        page_view
+        Object::new(&[]).unwrap()
     }
 
     pub fn switch_to_profile_page(&self, profile_path: &Path) {
@@ -122,6 +120,17 @@ impl ObjectImpl for ProfilePageViewPrivate {
             "profile-name" => self.profile_name.borrow().to_value(),
             _ => unreachable!(),
         }
+    }
+
+    fn constructed(&self, obj: &Self::Type) {
+        self.parent_constructed(obj);
+
+        obj.set_child(Some(&ProfileSetupPage::new()));
+
+        obj.set_margin_top(18);
+        obj.set_margin_bottom(18);
+        obj.set_margin_start(18);
+        obj.set_margin_end(18);
     }
 }
 
