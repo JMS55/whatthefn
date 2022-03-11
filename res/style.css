@@ -9,10 +9,21 @@ button.green-button {
 	background-color: @green_1;
 }
 
+/* ------------------------------------------------------------------------------ */
+
 tabbar .end-action {
 	background-color: @headerbar_bg_color;
 }
 tabbar .end-action button {
 	margin-left: 4px;
 	border-radius: 6px;
+}
+
+tab {
+	color: @headerbar_fg_color;
+	background-color: @headerbar_bg_color;
+}
+tab:checked {
+	color: @window_fg_color;
+	background-color: @window_bg_color;
 }

@@ -9,9 +9,8 @@ Hotkeys (shortcuts, shortcut window, mnemonics, context menus, and tooltips):
         Select Cargo.toml
         Open profile / start profiling
 QOL:
-    Progressbars for compiling/loading feedback
     Overall color scheme
-    Tab styling
+    Progressbars for compiling/loading feedback
     Make ProfileSetupPage entries wider/easier to edit
     Allow combining windows together into one window
     Allow dropping profiles onto app/window/tabs to open

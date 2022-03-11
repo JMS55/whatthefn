@@ -22,8 +22,6 @@ use std::error::Error;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
-// TODO: There's a weird clipping issue with the focus indicator around the open/profile buttons
-
 glib::wrapper! {
     pub struct ProfileSetupPage(ObjectSubclass<ProfileSetupPagePrivate>)
     @extends Bin, Widget,
