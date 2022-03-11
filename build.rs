@@ -4,33 +4,49 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
-    println!("cargo:rerun-if-changed=data");
+    compile_blueprints("data/blp", "data/ui");
 
-    let mut input_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
-    input_dir.push("data");
-    let mut output_dir = input_dir.clone();
-    output_dir.push("ui");
-    input_dir.push("blp");
+    // Copy data folder to OUT_DIR
+    let out_dir = env::var("OUT_DIR").unwrap();
+    for entry in fs::read_dir("data").unwrap() {
+        let entry = entry.unwrap();
+        if entry.file_name() != "blp" {
+            fs::copy(
+                entry.path(),
+                [&out_dir, "data", entry.file_name().to_str().unwrap()]
+                    .iter()
+                    .collect::<PathBuf>(),
+            )
+            .unwrap();
+        }
+    }
 
-    let blueprint_files = fs::read_dir(&input_dir)
+    gio::compile_resources(
+        format!("{out_dir}/data"),
+        &format!("{out_dir}/data/com.github.jms55.WhatTheFn.gresource.xml"),
+        "com.github.jms55.WhatTheFn.gresource",
+    );
+}
+
+pub fn compile_blueprints(source_dir: &str, target_dir: &str) {
+    println!("cargo:rerun-if-changed={}", source_dir);
+
+    let blueprint_files = fs::read_dir(source_dir)
         .unwrap()
         .map(|file| file.unwrap().path())
         .collect::<Vec<_>>();
 
-    assert!(Command::new("blueprint-compiler")
+    let out_dir = env::var("OUT_DIR").unwrap();
+    let status = Command::new("blueprint-compiler")
         .arg("batch-compile")
-        .arg(&output_dir)
-        .arg(input_dir)
-        .args(&blueprint_files)
+        .arg(format!("{out_dir}/{target_dir}"))
+        .arg(source_dir)
+        .args(blueprint_files)
         .status()
-        .unwrap()
-        .success());
+        .unwrap();
 
-    gio::compile_resources(
-        "data",
-        "data/com.github.jms55.WhatTheFn.gresource.xml",
-        "com.github.jms55.WhatTheFn.gresource",
+    assert!(
+        status.success(),
+        "blueprint-compiler failed with exit status {status}",
     );
-
-    fs::remove_dir_all(&output_dir).unwrap();
 }
