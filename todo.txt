@@ -4,6 +4,7 @@ Finish ProfileSetupPage
 
 
 Hotkeys (shortcuts, shortcut window, mnemonics, context menus, and tooltips):
+        Close window/app
         Open/close/send to new window tabs
         Select Cargo.toml
         Open profile / start profiling
@@ -14,7 +15,6 @@ QOL:
     Make ProfileSetupPage entries wider/easier to edit
     Allow combining windows together into one window
     Allow dropping profiles onto app/window/tabs to open
-    After profiling (success or fail), bring window to foreground of OS?
 
 Write perf.data->profile.wtf converter (or at least convert perf.json)
     https://fasterthanli.me/series/making-our-own-executable-packer

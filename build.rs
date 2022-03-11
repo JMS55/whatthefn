@@ -4,16 +4,16 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
-    compile_blueprints("data/blp", "data/ui");
+    compile_blueprints("res/blp", "res/ui");
 
-    // Copy data folder to OUT_DIR
+    // Copy res folder to OUT_DIR
     let out_dir = env::var("OUT_DIR").unwrap();
-    for entry in fs::read_dir("data").unwrap() {
+    for entry in fs::read_dir("res").unwrap() {
         let entry = entry.unwrap();
         if entry.file_name() != "blp" {
             fs::copy(
                 entry.path(),
-                [&out_dir, "data", entry.file_name().to_str().unwrap()]
+                [&out_dir, "res", entry.file_name().to_str().unwrap()]
                     .iter()
                     .collect::<PathBuf>(),
             )
@@ -22,8 +22,8 @@ fn main() {
     }
 
     gio::compile_resources(
-        format!("{out_dir}/data"),
-        &format!("{out_dir}/data/com.github.jms55.WhatTheFn.gresource.xml"),
+        format!("{out_dir}/res"),
+        &format!("{out_dir}/res/com.github.jms55.WhatTheFn.gresource.xml"),
         "com.github.jms55.WhatTheFn.gresource",
     );
 }
