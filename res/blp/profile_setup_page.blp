@@ -85,9 +85,9 @@ template WtfProfileSetupPage : Adw.Bin {
                         clicked => start_profiling() swapped;
                     }
 
-                    Gtk.Button open_profile_button {
+                    Gtk.Button {
                         label: "Open Existing Profile";
-                        styles ["pill", "opaque", "blue-button"]
+                        styles ["pill"]
                         clicked => open_existing_profile() swapped;
                     }
                 }

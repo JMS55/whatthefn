@@ -2,9 +2,6 @@ row.success-row {
     background-color: @green_1;
 }
 
-button.blue-button {
-	background-color: @blue_1;
-}
 button.green-button {
 	background-color: @green_1;
 }

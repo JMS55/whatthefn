@@ -5,7 +5,7 @@ use gio::prelude::InputStreamExtManual;
 use gio::traits::{FileExt, InputStreamExt};
 use gio::{InputStream, SubprocessFlags, SubprocessLauncher};
 use glib::subclass::prelude::{ObjectImpl, ObjectSubclass, ObjectSubclassExt};
-use glib::subclass::types::InitializingObject;
+use glib::subclass::InitializingObject;
 use glib::{object_subclass, BoolError, Cast, DateTime, Error as GError, Object, PRIORITY_DEFAULT};
 use gtk::prelude::{InitializingWidgetExt, NativeDialogExtManual};
 use gtk::subclass::prelude::{
@@ -50,8 +50,6 @@ pub struct ProfileSetupPagePrivate {
     #[template_child]
     start_profiling_button: TemplateChild<Button>,
     #[template_child]
-    open_profile_button: TemplateChild<Button>,
-    #[template_child]
     cargo_build_entry: TemplateChild<Entry>,
     #[template_child]
     perf_entry: TemplateChild<Entry>,
@@ -72,7 +70,6 @@ impl ProfileSetupPagePrivate {
             if let Some(path_str) = cargo_toml_path.to_str() {
                 self.cargo_toml_row.add_css_class("success-row");
                 self.start_profiling_button.add_css_class("green-button");
-                self.open_profile_button.remove_css_class("blue-button");
 
                 let profile_name = cargo_toml_path.file_name().unwrap().to_str().unwrap();
                 self.page_view()
@@ -205,7 +202,7 @@ async fn build_and_profile(
     page_view.set_data(ProfilePageViewState::SetupCompilingProgram, profile_name);
 
     // Run cargo build
-    let cargo_build_output = run_command(&cargo_build_command, &project_directory, true)
+    let cargo_build_output = run_command(cargo_build_command, project_directory, true)
         .await
         .map_err(|error| format!("Failed to compile project: {error}"))?;
 
@@ -222,18 +219,19 @@ async fn build_and_profile(
             }
         }
     }
-    let program_path = program_path
-        .ok_or::<Box<dyn Error>>("Failed to find program path in compiler output".into())?;
+    let program_path = program_path.ok_or_else::<Box<dyn Error>, _>(|| {
+        "Failed to find program path in compiler output".into()
+    })?;
 
     // Set page view state to profiling
     let profile_name = program_path.file_name().unwrap().to_str().unwrap();
     page_view.set_data(ProfilePageViewState::SetupProfilingProgram, profile_name);
 
     // Run perf and then convert profile to json
-    run_command(&perf_command, &project_directory, false)
+    run_command(&perf_command, project_directory, false)
         .await
         .map_err(|error| format!("Failed to profile project: {error}"))?;
-    run_command(&perf_convert_command, &project_directory, false)
+    run_command(perf_convert_command, project_directory, false)
         .await
         .map_err(|error| format!("Failed to convert profile: {error}"))?;
     // TODO: Delete .perf.data?
@@ -259,7 +257,7 @@ async fn run_command(
     // Parse command text into environment variables + command + arguments
     let mut command = Vec::new();
     let mut parsing_flags = true;
-    for x in command_text.split(" ") {
+    for x in command_text.split(' ') {
         match x.split_once("=") {
             Some((var, value)) if parsing_flags => subprocess.setenv(var, value, true),
             _ => {

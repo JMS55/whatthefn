@@ -3,7 +3,7 @@ Finish ProfileSetupPage
 
 
 
-Hotkeys (shortcuts, shortcut window, mnemonics, context menus, and tooltips):
+Hotkeys (shortcuts, shortcut window, mnemonics, focus moving, context menus, and tooltips):
         Close window/app
         Open/close/send to new window tabs
         Select Cargo.toml

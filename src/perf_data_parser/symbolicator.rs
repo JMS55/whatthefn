@@ -23,7 +23,7 @@ impl Symbolicator {
 
         let object_text_section = object_file
             .section_by_name(".text")
-            .ok_or(IOError::new(ErrorKind::NotFound, ".text section not found"))?;
+            .ok_or_else(|| IOError::new(ErrorKind::NotFound, ".text section not found"))?;
         dbg!(object_text_section.address());
         let object_text_section_address =
             object_base_address + object_text_section.address() - 0x7D1E40; // TODO

@@ -3,7 +3,7 @@ use adw::subclass::prelude::AdwApplicationWindowImpl;
 use adw::{TabBar, TabPage, TabView, WindowTitle};
 use gio::{ActionGroup, ActionMap};
 use glib::subclass::prelude::{ObjectImpl, ObjectSubclass};
-use glib::subclass::types::InitializingObject;
+use glib::subclass::InitializingObject;
 use glib::{clone, object_subclass, IsA, Object, ObjectExt, ParamSpec};
 use gtk::prelude::{GObjectPropertyExpressionExt, InitializingWidgetExt};
 use gtk::subclass::prelude::{
@@ -27,6 +27,7 @@ impl ApplicationWindow {
     pub fn new<A: IsA<Application>>(application: &A, create_initial_tab: bool) -> Self {
         let window: ApplicationWindow = Object::new(&[("application", application)]).unwrap();
 
+        // TODO: Make this a construct-only property
         if create_initial_tab {
             window.imp().add_new_tab();
         }

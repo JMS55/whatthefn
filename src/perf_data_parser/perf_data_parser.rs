@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::{BufReader, Error as IOError, ErrorKind, Read, Seek, SeekFrom};
 use std::path::Path;
 
-pub fn convert_perf_data_to_wtf<'a, P1: AsRef<Path>, P2: AsRef<Path> + Copy>(
+pub fn convert_perf_data_to_wtf<P1: AsRef<Path>, P2: AsRef<Path> + Copy>(
     perf_data_path: P1,
     binary_profiled_path: P2,
 ) -> Result<(), Box<dyn Error>> {
@@ -19,7 +19,7 @@ pub fn convert_perf_data_to_wtf<'a, P1: AsRef<Path>, P2: AsRef<Path> + Copy>(
     // TODO: Pass all attributes to read_data_section(), pick the correct one for each event
     let sample_type = attributes
         .get(0)
-        .ok_or(IOError::new(ErrorKind::InvalidData, "No attributes found"))?
+        .ok_or_else(|| IOError::new(ErrorKind::InvalidData, "No attributes found"))?
         .sample_type;
     file.read_data_section(&header, sample_type, binary_profiled_path, |sample| {
         // TODO: This should send sample to be processed on another thread
