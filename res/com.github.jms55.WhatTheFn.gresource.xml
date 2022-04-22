@@ -7,6 +7,7 @@
   <gresource prefix="/com/github/jms55/WhatTheFn/">
     <file compressed="true" preprocess="xml-stripblanks">ui/application_window.ui</file>
     <file compressed="true" preprocess="xml-stripblanks">ui/profile_setup_page.ui</file>
+    <file compressed="true" preprocess="xml-stripblanks">ui/profile_page.ui</file>
   </gresource>
   <gresource prefix="/com/github/jms55/WhatTheFn/icons/scalable/actions/">
     <file compressed="true" preprocess="xml-stripblanks">plus-symbolic.svg</file>

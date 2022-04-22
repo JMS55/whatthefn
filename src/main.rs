@@ -3,6 +3,10 @@ mod perf_data_parser;
 mod profile_page;
 mod profile_page_view;
 mod profile_setup_page;
+mod timeline_range;
+mod timeline_row;
+mod timeline_ticker;
+mod timeline_view;
 
 use crate::application_window::ApplicationWindow;
 use adw::Application;

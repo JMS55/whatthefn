@@ -83,6 +83,17 @@ impl ObjectSubclass for ProfilePageViewPrivate {
 }
 
 impl ObjectImpl for ProfilePageViewPrivate {
+    fn constructed(&self, obj: &Self::Type) {
+        self.parent_constructed(obj);
+
+        obj.set_child(Some(&ProfileSetupPage::new()));
+
+        obj.set_margin_top(18);
+        obj.set_margin_bottom(18);
+        obj.set_margin_start(18);
+        obj.set_margin_end(18);
+    }
+
     fn properties() -> &'static [ParamSpec] {
         static PROPERTIES: Lazy<[ParamSpec; 2]> = Lazy::new(|| {
             [
@@ -97,21 +108,13 @@ impl ObjectImpl for ProfilePageViewPrivate {
                 ParamSpecString::new(
                     "profile-name",
                     "ProfileName",
-                    "Name of the profile the view is showingn",
+                    "Name of the profile the view is showing",
                     None,
                     ParamFlags::READWRITE,
                 ),
             ]
         });
         PROPERTIES.as_ref()
-    }
-
-    fn set_property(&self, _obj: &Self::Type, _id: usize, value: &Value, pspec: &ParamSpec) {
-        match pspec.name() {
-            "state" => *self.state.borrow_mut() = value.get().unwrap(),
-            "profile-name" => *self.profile_name.borrow_mut() = value.get().unwrap(),
-            _ => unreachable!(),
-        }
     }
 
     fn property(&self, _obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> Value {
@@ -122,15 +125,12 @@ impl ObjectImpl for ProfilePageViewPrivate {
         }
     }
 
-    fn constructed(&self, obj: &Self::Type) {
-        self.parent_constructed(obj);
-
-        obj.set_child(Some(&ProfileSetupPage::new()));
-
-        obj.set_margin_top(18);
-        obj.set_margin_bottom(18);
-        obj.set_margin_start(18);
-        obj.set_margin_end(18);
+    fn set_property(&self, _obj: &Self::Type, _id: usize, value: &Value, pspec: &ParamSpec) {
+        match pspec.name() {
+            "state" => *self.state.borrow_mut() = value.get().unwrap(),
+            "profile-name" => *self.profile_name.borrow_mut() = value.get().unwrap(),
+            _ => unreachable!(),
+        }
     }
 }
 

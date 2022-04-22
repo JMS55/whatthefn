@@ -2,14 +2,15 @@ use crate::profile_page_view::{ProfilePageView, ProfilePageViewState};
 use adw::subclass::prelude::AdwApplicationWindowImpl;
 use adw::{TabBar, TabPage, TabView, WindowTitle};
 use gio::{ActionGroup, ActionMap};
-use glib::subclass::prelude::{ObjectImpl, ObjectSubclass};
+use glib::subclass::prelude::{
+    ObjectImpl, ObjectImplExt, ObjectSubclass, ObjectSubclassExt, ObjectSubclassIsExt,
+};
 use glib::subclass::InitializingObject;
 use glib::{clone, object_subclass, IsA, Object, ObjectExt, ParamSpec};
 use gtk::prelude::{GObjectPropertyExpressionExt, InitializingWidgetExt};
 use gtk::subclass::prelude::{
-    ApplicationWindowImpl, CompositeTemplateCallbacksClass, CompositeTemplateClass, ObjectImplExt,
-    ObjectSubclassExt, ObjectSubclassIsExt, TemplateChild, WidgetClassSubclassExt, WidgetImpl,
-    WindowImpl,
+    ApplicationWindowImpl, CompositeTemplateCallbacksClass, CompositeTemplateClass, TemplateChild,
+    WidgetClassSubclassExt, WidgetImpl, WindowImpl,
 };
 use gtk::traits::{GtkWindowExt, WidgetExt};
 use gtk::{
