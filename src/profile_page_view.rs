@@ -1,16 +1,13 @@
+use crate::profile_page::new_profile_page;
 use crate::profile_setup_page::ProfileSetupPage;
 use adw::subclass::prelude::BinImpl;
 use adw::traits::BinExt;
 use adw::Bin;
 use glib::subclass::prelude::{ObjectImpl, ObjectImplExt, ObjectSubclass};
-use glib::{
-    object_subclass, Enum as GEnum, Object, ObjectExt, ParamFlags, ParamSpec, ParamSpecEnum,
-    ParamSpecString, StaticType, ToValue, Value,
-};
+use glib::{object_subclass, Enum as GEnum, Object, ObjectExt, Properties, StaticType};
 use gtk::subclass::prelude::WidgetImpl;
 use gtk::traits::WidgetExt;
 use gtk::{Accessible, Buildable, ConstraintTarget, Widget};
-use once_cell::sync::Lazy;
 use std::cell::RefCell;
 use std::path::Path;
 
@@ -30,24 +27,8 @@ impl ProfilePageView {
     }
 
     pub fn set_data(&self, state: ProfilePageViewState, profile_name: &str) {
-        self.set_profile_name(profile_name);
         self.set_state(state);
-    }
-
-    pub fn profile_name(&self) -> Option<String> {
-        self.property("profile-name")
-    }
-
-    pub fn set_profile_name(&self, profile_name: &str) {
-        self.set_property("profile-name", profile_name);
-    }
-
-    pub fn state(&self) -> ProfilePageViewState {
-        self.property("state")
-    }
-
-    pub fn set_state(&self, state: ProfilePageViewState) {
-        self.set_property("state", state);
+        self.set_profile_name(Some(profile_name.to_owned()));
     }
 }
 
@@ -69,9 +50,11 @@ impl Default for ProfilePageViewState {
 
 // ------------------------------------------------------------------------------
 
-#[derive(Default)]
+#[derive(Properties, Default)]
 pub struct ProfilePageViewPrivate {
+    #[property(get, set, builder(ProfilePageViewState::static_type()))]
     state: RefCell<ProfilePageViewState>,
+    #[property(get, set)]
     profile_name: RefCell<Option<String>>,
 }
 
@@ -83,54 +66,15 @@ impl ObjectSubclass for ProfilePageViewPrivate {
 }
 
 impl ObjectImpl for ProfilePageViewPrivate {
-    fn constructed(&self, obj: &Self::Type) {
-        self.parent_constructed(obj);
+    fn constructed(&self, this: &Self::Type) {
+        self.parent_constructed(this);
 
-        obj.set_child(Some(&ProfileSetupPage::new()));
+        this.set_child(Some(&new_profile_page())); // TODO: ProfileSetupPage
 
-        obj.set_margin_top(18);
-        obj.set_margin_bottom(18);
-        obj.set_margin_start(18);
-        obj.set_margin_end(18);
-    }
-
-    fn properties() -> &'static [ParamSpec] {
-        static PROPERTIES: Lazy<[ParamSpec; 2]> = Lazy::new(|| {
-            [
-                ParamSpecEnum::new(
-                    "state",
-                    "State",
-                    "Which page the view is showing and what it is doing",
-                    ProfilePageViewState::static_type(),
-                    ProfilePageViewState::default() as i32,
-                    ParamFlags::READWRITE,
-                ),
-                ParamSpecString::new(
-                    "profile-name",
-                    "ProfileName",
-                    "Name of the profile the view is showing",
-                    None,
-                    ParamFlags::READWRITE,
-                ),
-            ]
-        });
-        PROPERTIES.as_ref()
-    }
-
-    fn property(&self, _obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> Value {
-        match pspec.name() {
-            "state" => self.state.borrow().to_value(),
-            "profile-name" => self.profile_name.borrow().to_value(),
-            _ => unreachable!(),
-        }
-    }
-
-    fn set_property(&self, _obj: &Self::Type, _id: usize, value: &Value, pspec: &ParamSpec) {
-        match pspec.name() {
-            "state" => *self.state.borrow_mut() = value.get().unwrap(),
-            "profile-name" => *self.profile_name.borrow_mut() = value.get().unwrap(),
-            _ => unreachable!(),
-        }
+        this.set_margin_top(18);
+        this.set_margin_bottom(18);
+        this.set_margin_start(18);
+        this.set_margin_end(18);
     }
 }
 

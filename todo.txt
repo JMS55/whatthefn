@@ -1,12 +1,13 @@
-Switch to property macro
+Port ProfileSetupPage to AdwEntryRow
 Write ProfilePage
     Write TimelineRow
     Write TimelineView
-        Fix display/selection time range changing on resize
         Create child TimelineRows in constructed()
         Setup scrolling up/down and left/right by implementing Scrollable
         Eliminate flash from clearing selection
         Setup button to zoom timeline on selection hover
+        Should maybe adjust display/selection time range to increase on resize?
+        Indicators for selection time range
         Movable handles for selection bounds
         Round selection corners
         Add shadow at the ends when there is more to scroll?
@@ -15,13 +16,12 @@ Write ProfilePage
     Put everything together
     Draw longer ticks slightly darker
     Ensure everything is visible in dark mode
-    Cleanup
-Finish ProfileSetupPage
-    Port to AdwEntryRow
+    Cleanup, add comments
 Cleanup tabs:
     Figure out segfault when closing window with more than 1 tab
     Fix tab height
     Make dragging tab out of headerbar less janky
+Finish ProfileSetupPage
 
 
 Hotkeys (shortcuts, shortcut window, mnemonics, focus moving, context menus, and tooltips):

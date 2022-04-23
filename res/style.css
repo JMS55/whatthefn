@@ -11,3 +11,9 @@ timeline-ticker {
     padding: 4px;
     border-radius: 8px;
 }
+
+timeline-row {
+    background-color: @light_2;
+    padding: 4px;
+    border-radius: 8px;
+}

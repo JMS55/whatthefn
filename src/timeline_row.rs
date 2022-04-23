@@ -1,13 +1,11 @@
+use crate::timeline_range::TimelineRange;
 use glib::subclass::prelude::{ObjectImpl, ObjectImplExt, ObjectSubclass};
-use glib::{
-    object_subclass, Object, ObjectExt, ParamFlags, ParamSpec, ParamSpecUInt64, ToValue, Value,
-};
+use glib::{object_subclass, Object, ObjectExt, Properties, StaticType};
 use gtk::graphene::Rect;
-use gtk::subclass::prelude::{WidgetImpl, WidgetImplExt};
+use gtk::subclass::prelude::{WidgetClassSubclassExt, WidgetImpl, WidgetImplExt};
 use gtk::traits::{StyleContextExt, WidgetExt};
 use gtk::{Accessible, Buildable, ConstraintTarget, Orientation, Snapshot, Widget};
-use once_cell::sync::Lazy;
-use std::cell::Cell;
+use std::cell::RefCell;
 
 glib::wrapper! {
     pub struct TimelineRow(ObjectSubclass<TimelineRowPrivate>)
@@ -16,20 +14,17 @@ glib::wrapper! {
 }
 
 impl TimelineRow {
-    pub fn new(timeline_length: u64) -> Self {
-        Object::new(&[("timeline-length", &timeline_length)]).unwrap()
-    }
-
-    pub fn timeline_length(&self) -> u64 {
-        self.property("timeline-length")
+    pub fn new() -> Self {
+        Object::new(&[]).unwrap()
     }
 }
 
 // ------------------------------------------------------------------------------
 
-#[derive(Default)]
+#[derive(Properties, Default)]
 pub struct TimelineRowPrivate {
-    timeline_length: Cell<u64>,
+    #[property(get, set, builder(TimelineRange::static_type()))]
+    time_range: RefCell<TimelineRange>,
 }
 
 #[object_subclass]
@@ -37,52 +32,22 @@ impl ObjectSubclass for TimelineRowPrivate {
     const NAME: &'static str = "WtfTimelineRow";
     type Type = TimelineRow;
     type ParentType = Widget;
+
+    fn class_init(klass: &mut Self::Class) {
+        klass.set_css_name("timeline-row");
+    }
 }
 
 impl ObjectImpl for TimelineRowPrivate {
-    fn constructed(&self, obj: &Self::Type) {
-        self.parent_constructed(obj);
+    fn constructed(&self, this: &Self::Type) {
+        self.parent_constructed(this);
 
-        obj.set_hexpand(true);
-    }
-
-    fn properties() -> &'static [ParamSpec] {
-        static PROPERTIES: Lazy<[ParamSpec; 1]> = Lazy::new(|| {
-            [ParamSpecUInt64::new(
-                "timeline-length",
-                "TimelineLength",
-                "Length of the timeline in milliseconds",
-                0,
-                u64::MAX,
-                u64::default(),
-                ParamFlags::READWRITE | ParamFlags::CONSTRUCT_ONLY,
-            )]
-        });
-        PROPERTIES.as_ref()
-    }
-
-    fn property(&self, _obj: &Self::Type, _id: usize, pspec: &ParamSpec) -> Value {
-        match pspec.name() {
-            "timeline-length" => self.timeline_length.get().to_value(),
-            _ => unreachable!(),
-        }
-    }
-
-    fn set_property(&self, _obj: &Self::Type, _id: usize, value: &Value, pspec: &ParamSpec) {
-        match pspec.name() {
-            "timeline-length" => self.timeline_length.set(value.get().unwrap()),
-            _ => unreachable!(),
-        }
+        this.set_hexpand(true);
     }
 }
 
 impl WidgetImpl for TimelineRowPrivate {
-    fn measure(
-        &self,
-        _widget: &Self::Type,
-        orientation: Orientation,
-        _for_size: i32,
-    ) -> (i32, i32, i32, i32) {
+    fn measure(&self, _: &Self::Type, orientation: Orientation, _: i32) -> (i32, i32, i32, i32) {
         match orientation {
             Orientation::Horizontal => (20, 20, -1, -1),
             Orientation::Vertical => (30, 30, -1, -1),
@@ -90,8 +55,8 @@ impl WidgetImpl for TimelineRowPrivate {
         }
     }
 
-    fn snapshot(&self, widget: &Self::Type, snapshot: &Snapshot) {
-        self.parent_snapshot(widget, snapshot);
+    fn snapshot(&self, this: &Self::Type, snapshot: &Snapshot) {
+        self.parent_snapshot(this, snapshot);
 
         let data = [
             13, 9, 8, 11, 14, 14, 12, 9, 8, 1, 6, 2, 5, 7, 11, 4, 5, 11, 9, 3, 11, 4, 7, 1, 7, 7,
@@ -133,11 +98,11 @@ impl WidgetImpl for TimelineRowPrivate {
             9, 1, 1, 7, 9, 3, 1, 1, 3, 1, 4, 11, 1,
         ];
 
-        let color = widget.style_context().lookup_color("blue_3").unwrap();
-        let widget_height = widget.height() as f32;
+        let color = this.style_context().lookup_color("blue_3").unwrap();
+        let widget_height = this.height() as f32;
         const CROP_CALLSTACKS_TALLER_THAN: f32 = 20.0;
 
-        let count = (widget.width() / 2 + 1).min(data.len() as i32);
+        let count = (this.width() / 2 + 1).min(data.len() as i32);
 
         for i in 0..count {
             let datum = data[i as usize];

@@ -317,8 +317,8 @@ impl ObjectSubclass for ProfileSetupPagePrivate {
         klass.bind_template_callbacks();
     }
 
-    fn instance_init(obj: &InitializingObject<Self>) {
-        obj.init_template();
+    fn instance_init(this: &InitializingObject<Self>) {
+        this.init_template();
     }
 }
 
