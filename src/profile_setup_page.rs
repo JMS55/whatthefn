@@ -1,6 +1,6 @@
 use crate::profile_page_view::{ProfilePageView, ProfilePageViewState};
 use adw::subclass::prelude::BinImpl;
-use adw::{ActionRow, Bin, Clamp, Toast, ToastOverlay};
+use adw::{ActionRow, Bin, Clamp, EntryRow, Toast, ToastOverlay};
 use gio::prelude::InputStreamExtManual;
 use gio::traits::{FileExt, InputStreamExt};
 use gio::{InputStream, SubprocessFlags, SubprocessLauncher};
@@ -50,11 +50,11 @@ pub struct ProfileSetupPagePrivate {
     #[template_child]
     start_profiling_button: TemplateChild<Button>,
     #[template_child]
-    cargo_build_entry: TemplateChild<Entry>,
+    cargo_build_entry: TemplateChild<EntryRow>,
     #[template_child]
-    perf_entry: TemplateChild<Entry>,
+    perf_entry: TemplateChild<EntryRow>,
     #[template_child]
-    program_arguments_entry: TemplateChild<Entry>,
+    program_arguments_entry: TemplateChild<EntryRow>,
 }
 
 #[template_callbacks]

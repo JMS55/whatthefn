@@ -5,7 +5,9 @@ edition = "2021"
 
 [dependencies]
 gtk = { git = "https://github.com/gtk-rs/gtk4-rs", package = "gtk4" }
-adw = { git = "https://gitlab.gnome.org/World/Rust/libadwaita-rs", package = "libadwaita" }
+adw = { git = "https://gitlab.gnome.org/msandova/libadwaita-rs", branch = "entry-row-3-with-a-vengeance", package = "libadwaita", features = [
+    "v1_2",
+] }
 glib = { git = "https://github.com/ranfdev/gtk-rs-core.git", branch = "props_macro" }
 gio = { git = "https://github.com/ranfdev/gtk-rs-core.git", branch = "props_macro" }
 serde = { version = "1.0", features = ["derive"] }

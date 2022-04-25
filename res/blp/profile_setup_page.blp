@@ -35,41 +35,24 @@ template WtfProfileSetupPage : Adw.Bin {
                         }
                     }
 
-                    Adw.ActionRow {
-                        title: "Program arguments";
-                        subtitle: "Arguments to pass to the program";
-
-                        Gtk.Entry program_arguments_entry {
-                            placeholder-text: "No arguments";
-                            valign: center;
-                            styles ["monospace"]
-                        }
+                    Adw.EntryRow program_arguments_entry {
+                        title: "Program Arguments";
+                        styles ["monospace"]
                     }
 
                     Adw.ExpanderRow {
                         title: "Advanced Options";
-                        subtitle: "Configure commands";
 
-                        Adw.ActionRow {
-                            title: "Perf";
-                            subtitle: "Command for perf";
-
-                            Gtk.Entry perf_entry {
-                                text: "perf record --freq 99 --call-graph dwarf --output=${TMP_FILE} ${PROGRAM} ${PROGRAM_ARGUMENTS}";
-                                valign: center;
-                                styles ["monospace"]
-                            }
+                        Adw.EntryRow perf_entry {
+                            title: "Perf Record Command";
+                            text: "perf record --freq 99 --call-graph dwarf --output=${TMP_FILE} ${PROGRAM} ${PROGRAM_ARGUMENTS}";
+                            styles ["monospace"]
                         }
 
-                        Adw.ActionRow {
-                            title: "Cargo Build";
-                            subtitle: "Command for cargo build";
-
-                            Gtk.Entry cargo_build_entry {
-                                text: "RUSTFLAGS=-g cargo build --release --message-format=json";
-                                valign: center;
-                                styles ["monospace"]
-                            }
+                        Adw.EntryRow cargo_build_entry {
+                            title: "Cargo Build Command";
+                            text: "RUSTFLAGS=-g cargo build --release --message-format=json";
+                            styles ["monospace"]
                         }
                     }
                 }
@@ -81,7 +64,7 @@ template WtfProfileSetupPage : Adw.Bin {
                     Gtk.Button start_profiling_button {
                         label: "Start Profiling";
                         sensitive: false;
-                        styles ["pill", "opaque"]
+                        styles ["pill"]
                         clicked => start_profiling() swapped;
                     }
 

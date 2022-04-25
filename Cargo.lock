@@ -452,7 +452,7 @@ checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
 [[package]]
 name = "libadwaita"
 version = "0.2.0"
-source = "git+https://gitlab.gnome.org/World/Rust/libadwaita-rs#aa7d9c7fd040486d7450ca057af03d39a1b17d25"
+source = "git+https://gitlab.gnome.org/msandova/libadwaita-rs?branch=entry-row-3-with-a-vengeance#bbcd0d3bae0aa4b8aeb9403020b6f1a37102df74"
 dependencies = [
  "gdk-pixbuf",
  "gdk4",
@@ -468,7 +468,7 @@ dependencies = [
 [[package]]
 name = "libadwaita-sys"
 version = "0.2.0"
-source = "git+https://gitlab.gnome.org/World/Rust/libadwaita-rs#aa7d9c7fd040486d7450ca057af03d39a1b17d25"
+source = "git+https://gitlab.gnome.org/msandova/libadwaita-rs?branch=entry-row-3-with-a-vengeance#bbcd0d3bae0aa4b8aeb9403020b6f1a37102df74"
 dependencies = [
  "gdk4-sys",
  "gio-sys",
