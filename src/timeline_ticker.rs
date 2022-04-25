@@ -1,7 +1,7 @@
 use crate::timeline_range::{TimelineRange, TimelineRangePrivatePropertiesExt};
 use crate::timeline_view::{TimelineView, TimelineViewPrivatePropertiesExt};
-use glib::subclass::prelude::{ObjectImpl, ObjectImplExt, ObjectSubclass};
-use glib::{object_subclass, Cast, Object, ObjectExt, Properties, StaticType};
+use glib::subclass::prelude::{DerivedObjectProperties, ObjectImpl, ObjectImplExt, ObjectSubclass};
+use glib::{object_subclass, Cast, Object, ObjectExt, ParamSpec, Properties, StaticType, Value};
 use gtk::gdk::RGBA;
 use gtk::graphene::Rect;
 use gtk::subclass::prelude::{WidgetClassSubclassExt, WidgetImpl, WidgetImplExt};
@@ -49,6 +49,16 @@ impl ObjectImpl for TimelineTickerPrivate {
         this.set_hexpand(true);
         this.set_overflow(Overflow::Hidden);
         this.set_css_classes(&["caption-heading", "monospace"]);
+    }
+
+    fn properties() -> &'static [ParamSpec] {
+        Self::derived_properties()
+    }
+    fn set_property(&self, this: &Self::Type, id: usize, value: &Value, pspec: &ParamSpec) {
+        Self::derived_set_property(self, this, id, value, pspec).unwrap();
+    }
+    fn property(&self, this: &Self::Type, id: usize, pspec: &ParamSpec) -> Value {
+        Self::derived_property(self, this, id, pspec).unwrap()
     }
 }
 

@@ -213,7 +213,7 @@ dependencies = [
 [[package]]
 name = "gdk4"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/gtk4-rs#02750561a67766c395ee9a3adafd7be6dc7faebb"
+source = "git+https://github.com/gtk-rs/gtk4-rs#67f6d33aafaf38cd7648fd7e80475158cb296495"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -228,7 +228,7 @@ dependencies = [
 [[package]]
 name = "gdk4-sys"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/gtk4-rs#02750561a67766c395ee9a3adafd7be6dc7faebb"
+source = "git+https://github.com/gtk-rs/gtk4-rs#67f6d33aafaf38cd7648fd7e80475158cb296495"
 dependencies = [
  "cairo-sys-rs",
  "gdk-pixbuf-sys",
@@ -356,7 +356,7 @@ dependencies = [
 [[package]]
 name = "gsk4"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/gtk4-rs#02750561a67766c395ee9a3adafd7be6dc7faebb"
+source = "git+https://github.com/gtk-rs/gtk4-rs#67f6d33aafaf38cd7648fd7e80475158cb296495"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -371,7 +371,7 @@ dependencies = [
 [[package]]
 name = "gsk4-sys"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/gtk4-rs#02750561a67766c395ee9a3adafd7be6dc7faebb"
+source = "git+https://github.com/gtk-rs/gtk4-rs#67f6d33aafaf38cd7648fd7e80475158cb296495"
 dependencies = [
  "cairo-sys-rs",
  "gdk4-sys",
@@ -386,7 +386,7 @@ dependencies = [
 [[package]]
 name = "gtk4"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/gtk4-rs#02750561a67766c395ee9a3adafd7be6dc7faebb"
+source = "git+https://github.com/gtk-rs/gtk4-rs#67f6d33aafaf38cd7648fd7e80475158cb296495"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -408,7 +408,7 @@ dependencies = [
 [[package]]
 name = "gtk4-macros"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/gtk4-rs#02750561a67766c395ee9a3adafd7be6dc7faebb"
+source = "git+https://github.com/gtk-rs/gtk4-rs#67f6d33aafaf38cd7648fd7e80475158cb296495"
 dependencies = [
  "anyhow",
  "proc-macro-crate",
@@ -422,7 +422,7 @@ dependencies = [
 [[package]]
 name = "gtk4-sys"
 version = "0.5.0"
-source = "git+https://github.com/gtk-rs/gtk4-rs#02750561a67766c395ee9a3adafd7be6dc7faebb"
+source = "git+https://github.com/gtk-rs/gtk4-rs#67f6d33aafaf38cd7648fd7e80475158cb296495"
 dependencies = [
  "cairo-sys-rs",
  "gdk-pixbuf-sys",
@@ -452,7 +452,7 @@ checksum = "1aab8fc367588b89dcee83ab0fd66b72b50b72fa1904d7095045ace2b0c81c35"
 [[package]]
 name = "libadwaita"
 version = "0.2.0"
-source = "git+https://gitlab.gnome.org/World/Rust/libadwaita-rs#9d5e5e7eba9257ad557e9f16b68ef9f6c99e5d3e"
+source = "git+https://gitlab.gnome.org/World/Rust/libadwaita-rs#aa7d9c7fd040486d7450ca057af03d39a1b17d25"
 dependencies = [
  "gdk-pixbuf",
  "gdk4",
@@ -468,7 +468,7 @@ dependencies = [
 [[package]]
 name = "libadwaita-sys"
 version = "0.2.0"
-source = "git+https://gitlab.gnome.org/World/Rust/libadwaita-rs#9d5e5e7eba9257ad557e9f16b68ef9f6c99e5d3e"
+source = "git+https://gitlab.gnome.org/World/Rust/libadwaita-rs#aa7d9c7fd040486d7450ca057af03d39a1b17d25"
 dependencies = [
  "gdk4-sys",
  "gio-sys",

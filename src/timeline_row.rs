@@ -1,6 +1,6 @@
 use crate::timeline_range::TimelineRange;
-use glib::subclass::prelude::{ObjectImpl, ObjectImplExt, ObjectSubclass};
-use glib::{object_subclass, Object, ObjectExt, Properties, StaticType};
+use glib::subclass::prelude::{DerivedObjectProperties, ObjectImpl, ObjectImplExt, ObjectSubclass};
+use glib::{object_subclass, Object, ObjectExt, ParamSpec, Properties, StaticType, Value};
 use gtk::graphene::Rect;
 use gtk::subclass::prelude::{WidgetClassSubclassExt, WidgetImpl, WidgetImplExt};
 use gtk::traits::{StyleContextExt, WidgetExt};
@@ -43,6 +43,16 @@ impl ObjectImpl for TimelineRowPrivate {
         self.parent_constructed(this);
 
         this.set_hexpand(true);
+    }
+
+    fn properties() -> &'static [ParamSpec] {
+        Self::derived_properties()
+    }
+    fn set_property(&self, this: &Self::Type, id: usize, value: &Value, pspec: &ParamSpec) {
+        Self::derived_set_property(self, this, id, value, pspec).unwrap();
+    }
+    fn property(&self, this: &Self::Type, id: usize, pspec: &ParamSpec) -> Value {
+        Self::derived_property(self, this, id, pspec).unwrap()
     }
 }
 

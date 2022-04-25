@@ -1,8 +1,10 @@
 use crate::timeline_range::{TimelineRange, TimelineRangePrivatePropertiesExt};
 use crate::timeline_row::TimelineRow;
 use crate::timeline_ticker::TimelineTicker;
-use glib::subclass::prelude::{ObjectImpl, ObjectImplExt, ObjectSubclass, ObjectSubclassIsExt};
-use glib::{object_subclass, Cast, Object, ObjectExt, Properties, StaticType};
+use glib::subclass::prelude::{
+    DerivedObjectProperties, ObjectImpl, ObjectImplExt, ObjectSubclass, ObjectSubclassIsExt,
+};
+use glib::{object_subclass, Cast, Object, ObjectExt, ParamSpec, Properties, StaticType, Value};
 use gtk::gdk::RGBA;
 use gtk::graphene::Rect;
 use gtk::subclass::prelude::{WidgetClassSubclassExt, WidgetImpl, WidgetImplExt};
@@ -52,9 +54,9 @@ impl TimelineView {
 
 #[derive(Properties, Default)]
 pub struct TimelineViewPrivate {
-    #[property(get, construct_only, builder(TimelineRange::static_type()))]
+    #[property(get, set, construct_only, builder(TimelineRange::static_type()))]
     profile_time_range: RefCell<TimelineRange>,
-    #[property( get, set = Self::set_display_time_range, builder(TimelineRange::static_type()))]
+    #[property(get, set = Self::set_display_time_range, builder(TimelineRange::static_type()))]
     display_time_range: RefCell<TimelineRange>,
     #[property(get, set, builder(TimelineRange::static_type()))]
     selected_time_range: RefCell<Option<TimelineRange>>,
@@ -141,6 +143,16 @@ impl ObjectImpl for TimelineViewPrivate {
         while let Some(child) = this.first_child() {
             child.unparent();
         }
+    }
+
+    fn properties() -> &'static [ParamSpec] {
+        Self::derived_properties()
+    }
+    fn set_property(&self, this: &Self::Type, id: usize, value: &Value, pspec: &ParamSpec) {
+        Self::derived_set_property(self, this, id, value, pspec).unwrap();
+    }
+    fn property(&self, this: &Self::Type, id: usize, pspec: &ParamSpec) -> Value {
+        Self::derived_property(self, this, id, pspec).unwrap()
     }
 }
 

@@ -5,10 +5,11 @@ use adw::subclass::prelude::AdwApplicationWindowImpl;
 use adw::{TabBar, TabPage, TabView, WindowTitle};
 use gio::{ActionGroup, ActionMap};
 use glib::subclass::prelude::{
-    ObjectImpl, ObjectImplExt, ObjectSubclass, ObjectSubclassExt, ObjectSubclassIsExt,
+    DerivedObjectProperties, ObjectImpl, ObjectImplExt, ObjectSubclass, ObjectSubclassExt,
+    ObjectSubclassIsExt,
 };
 use glib::subclass::InitializingObject;
-use glib::{clone, object_subclass, IsA, Object, ObjectExt, ParamSpec, Properties};
+use glib::{clone, object_subclass, IsA, Object, ObjectExt, ParamSpec, Properties, Value};
 use gtk::prelude::{GObjectPropertyExpressionExt, InitializingWidgetExt};
 use gtk::subclass::prelude::{
     ApplicationWindowImpl, CompositeTemplateCallbacksClass, CompositeTemplateClass, TemplateChild,
@@ -51,7 +52,7 @@ pub struct ApplicationWindowPrivate {
     #[template_child]
     new_tab_button: TemplateChild<Button>,
 
-    #[property(get, construct_only)]
+    #[property(get, set, construct_only)]
     create_initial_tab: Cell<bool>,
 }
 
@@ -157,6 +158,16 @@ impl ObjectImpl for ApplicationWindowPrivate {
         }
 
         this.present();
+    }
+
+    fn properties() -> &'static [ParamSpec] {
+        Self::derived_properties()
+    }
+    fn set_property(&self, this: &Self::Type, id: usize, value: &Value, pspec: &ParamSpec) {
+        Self::derived_set_property(self, this, id, value, pspec).unwrap();
+    }
+    fn property(&self, this: &Self::Type, id: usize, pspec: &ParamSpec) -> Value {
+        Self::derived_property(self, this, id, pspec).unwrap()
     }
 }
 

@@ -3,8 +3,10 @@ use crate::profile_setup_page::ProfileSetupPage;
 use adw::subclass::prelude::BinImpl;
 use adw::traits::BinExt;
 use adw::Bin;
-use glib::subclass::prelude::{ObjectImpl, ObjectImplExt, ObjectSubclass};
-use glib::{object_subclass, Enum as GEnum, Object, ObjectExt, Properties, StaticType};
+use glib::subclass::prelude::{DerivedObjectProperties, ObjectImpl, ObjectImplExt, ObjectSubclass};
+use glib::{
+    object_subclass, Enum as GEnum, Object, ObjectExt, ParamSpec, Properties, StaticType, Value,
+};
 use gtk::subclass::prelude::WidgetImpl;
 use gtk::traits::WidgetExt;
 use gtk::{Accessible, Buildable, ConstraintTarget, Widget};
@@ -75,6 +77,16 @@ impl ObjectImpl for ProfilePageViewPrivate {
         this.set_margin_bottom(18);
         this.set_margin_start(18);
         this.set_margin_end(18);
+    }
+
+    fn properties() -> &'static [ParamSpec] {
+        Self::derived_properties()
+    }
+    fn set_property(&self, this: &Self::Type, id: usize, value: &Value, pspec: &ParamSpec) {
+        Self::derived_set_property(self, this, id, value, pspec).unwrap();
+    }
+    fn property(&self, this: &Self::Type, id: usize, pspec: &ParamSpec) -> Value {
+        Self::derived_property(self, this, id, pspec).unwrap()
     }
 }
 

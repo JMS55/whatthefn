@@ -1,5 +1,5 @@
-use glib::subclass::prelude::{ObjectImpl, ObjectSubclass};
-use glib::{object_subclass, Object, ObjectExt, Properties};
+use glib::subclass::prelude::{DerivedObjectProperties, ObjectImpl, ObjectSubclass};
+use glib::{object_subclass, Object, ObjectExt, ParamSpec, Properties, Value};
 use std::cell::Cell;
 
 glib::wrapper! {
@@ -22,9 +22,9 @@ impl Default for TimelineRange {
 
 #[derive(Properties, Default)]
 pub struct TimelineRangePrivate {
-    #[property(get, construct_only)]
+    #[property(get, set, construct_only)]
     start: Cell<u64>,
-    #[property(get, construct_only)]
+    #[property(get, set, construct_only)]
     end: Cell<u64>,
 }
 
@@ -35,4 +35,14 @@ impl ObjectSubclass for TimelineRangePrivate {
     type ParentType = Object;
 }
 
-impl ObjectImpl for TimelineRangePrivate {}
+impl ObjectImpl for TimelineRangePrivate {
+    fn properties() -> &'static [ParamSpec] {
+        Self::derived_properties()
+    }
+    fn set_property(&self, this: &Self::Type, id: usize, value: &Value, pspec: &ParamSpec) {
+        Self::derived_set_property(self, this, id, value, pspec).unwrap();
+    }
+    fn property(&self, this: &Self::Type, id: usize, pspec: &ParamSpec) -> Value {
+        Self::derived_property(self, this, id, pspec).unwrap()
+    }
+}
