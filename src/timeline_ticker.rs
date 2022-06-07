@@ -1,7 +1,7 @@
-use crate::timeline_range::{TimelineRange, TimelineRangePrivatePropertiesExt};
+use crate::timeline_range::TimelineRangePrivatePropertiesExt;
 use crate::timeline_view::{TimelineView, TimelineViewPrivatePropertiesExt};
-use glib::subclass::prelude::{DerivedObjectProperties, ObjectImpl, ObjectImplExt, ObjectSubclass};
-use glib::{object_subclass, Cast, Object, ObjectExt, ParamSpec, Properties, StaticType, Value};
+use glib::subclass::prelude::{ObjectImpl, ObjectImplExt, ObjectSubclass};
+use glib::{object_subclass, Cast, Object, Properties};
 use gtk::gdk::RGBA;
 use gtk::graphene::Rect;
 use gtk::subclass::prelude::{WidgetClassSubclassExt, WidgetImpl, WidgetImplExt};
@@ -9,7 +9,6 @@ use gtk::traits::WidgetExt;
 use gtk::{
     Accessible, Buildable, ConstraintTarget, Orientation, Overflow, Scrollable, Snapshot, Widget,
 };
-use std::cell::RefCell;
 
 glib::wrapper! {
     pub struct TimelineTicker(ObjectSubclass<TimelineTickerPrivate>)
@@ -26,10 +25,7 @@ impl TimelineTicker {
 // ------------------------------------------------------------------------------
 
 #[derive(Properties, Default)]
-pub struct TimelineTickerPrivate {
-    #[property(get, set, builder(TimelineRange::static_type()))]
-    time_range: RefCell<TimelineRange>,
-}
+pub struct TimelineTickerPrivate {}
 
 #[object_subclass]
 impl ObjectSubclass for TimelineTickerPrivate {
@@ -50,16 +46,6 @@ impl ObjectImpl for TimelineTickerPrivate {
         this.set_overflow(Overflow::Hidden);
         this.set_css_classes(&["caption-heading", "monospace"]);
     }
-
-    fn properties() -> &'static [ParamSpec] {
-        Self::derived_properties()
-    }
-    fn set_property(&self, this: &Self::Type, id: usize, value: &Value, pspec: &ParamSpec) {
-        Self::derived_set_property(self, this, id, value, pspec).unwrap();
-    }
-    fn property(&self, this: &Self::Type, id: usize, pspec: &ParamSpec) -> Value {
-        Self::derived_property(self, this, id, pspec).unwrap()
-    }
 }
 
 impl WidgetImpl for TimelineTickerPrivate {
@@ -75,14 +61,18 @@ impl WidgetImpl for TimelineTickerPrivate {
         self.parent_snapshot(this, snapshot);
 
         let timeline_view = this.parent().unwrap().downcast::<TimelineView>().unwrap();
-        let time_range = this.time_range();
+        let display_duration = timeline_view.display_time_range().duration();
 
         let mut p = 5;
         while p < (this.width() - 5) {
             let is_longer_tick = p % 55 == 0;
 
             snapshot.append_color(
-                &RGBA::BLACK,
+                &if is_longer_tick {
+                    RGBA::BLACK
+                } else {
+                    RGBA::new(0.0, 0.0, 0.0, 0.5)
+                },
                 &Rect::new(
                     p as f32,
                     20.0,
@@ -94,7 +84,7 @@ impl WidgetImpl for TimelineTickerPrivate {
             if is_longer_tick {
                 let timestamp = timeline_view.widget_to_time_point(p as f64)
                     - timeline_view.profile_time_range().start();
-                let timestamp = match time_range.end() - time_range.start() {
+                let timestamp = match display_duration {
                     0..=999 => format!("{timestamp}ms"),
                     1000..=59999 => format!("{:.0}s", (timestamp as f64 / 1000.0).round()),
                     60000..=3599999 => format!("{:.0}m", (timestamp as f64 / 60000.0).round()),

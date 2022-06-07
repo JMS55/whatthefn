@@ -1,6 +1,9 @@
+use crate::perf_data_parser::Profile;
 use crate::timeline_range::{TimelineRange, TimelineRangePrivatePropertiesExt};
 use crate::timeline_row::TimelineRow;
 use crate::timeline_ticker::TimelineTicker;
+use adw::StyleManager;
+use glib::once_cell::sync::OnceCell;
 use glib::subclass::prelude::{
     DerivedObjectProperties, ObjectImpl, ObjectImplExt, ObjectSubclass, ObjectSubclassIsExt,
 };
@@ -10,9 +13,10 @@ use gtk::graphene::Rect;
 use gtk::subclass::prelude::{WidgetClassSubclassExt, WidgetImpl, WidgetImplExt};
 use gtk::traits::{EventControllerExt, GestureDragExt, OrientableExt, WidgetExt};
 use gtk::{
-    Accessible, BoxLayout, Buildable, ConstraintTarget, GestureDrag, Orientation, Scrollable,
-    Snapshot, Widget,
+    Accessible, BoxLayout, Buildable, ConstraintTarget, GestureDrag, Orientation, Overflow,
+    Scrollable, Snapshot, Widget,
 };
+use itertools::Itertools;
 use std::cell::RefCell;
 
 glib::wrapper! {
@@ -22,12 +26,37 @@ glib::wrapper! {
 }
 
 impl TimelineView {
-    pub fn new(profile_time_range: &TimelineRange) -> Self {
-        Object::new(&[
-            ("profile-time-range", profile_time_range),
-            ("display-time-range", profile_time_range),
+    pub fn new(profile: Profile) -> Self {
+        let start = profile
+            .samples
+            .iter()
+            .map(|sample| sample.timestamp)
+            .min()
+            .unwrap();
+        let end = profile
+            .samples
+            .iter()
+            .map(|sample| sample.timestamp)
+            .max()
+            .unwrap();
+        let profile_time_range = TimelineRange::new(start, end);
+
+        let this: Self = Object::new(&[
+            ("profile-time-range", &profile_time_range),
+            ("display-time-range", &profile_time_range),
         ])
-        .unwrap()
+        .unwrap();
+
+        for (_, samples) in &profile
+            .samples
+            .into_iter()
+            .into_group_map_by(|sample| sample.tid)
+        {
+            let timeline_row = TimelineRow::new(samples.clone());
+            timeline_row.set_parent(&this);
+        }
+
+        this
     }
 
     pub fn time_to_widget_point(&self, time_point: u64) -> f64 {
@@ -55,7 +84,7 @@ impl TimelineView {
 #[derive(Properties, Default)]
 pub struct TimelineViewPrivate {
     #[property(get, set, construct_only, builder(TimelineRange::static_type()))]
-    profile_time_range: RefCell<TimelineRange>,
+    profile_time_range: OnceCell<TimelineRange>,
     #[property(get, set = Self::set_display_time_range, builder(TimelineRange::static_type()))]
     display_time_range: RefCell<TimelineRange>,
     #[property(get, set, builder(TimelineRange::static_type()))]
@@ -102,6 +131,7 @@ impl ObjectSubclass for TimelineViewPrivate {
     type ParentType = Widget;
 
     fn class_init(klass: &mut Self::Class) {
+        klass.set_css_name("timeline-view");
         klass.set_layout_manager_type::<BoxLayout>();
     }
 }
@@ -120,6 +150,7 @@ impl ObjectImpl for TimelineViewPrivate {
 
         this.set_hexpand(true);
         this.set_vexpand(true);
+        this.set_overflow(Overflow::Hidden);
 
         let selection_controller = GestureDrag::new();
         selection_controller.connect_drag_begin(clear_selection);
@@ -128,15 +159,6 @@ impl ObjectImpl for TimelineViewPrivate {
 
         let timeline_ticker = TimelineTicker::new();
         timeline_ticker.set_parent(this);
-        this.bind_property("display-time-range", &timeline_ticker, "time-range")
-            .build();
-
-        for _ in 0..10 {
-            let timeline_row = TimelineRow::new();
-            timeline_row.set_parent(this);
-            this.bind_property("display-time-range", &timeline_row, "time-range")
-                .build();
-        }
     }
 
     fn dispose(&self, this: &Self::Type) {
@@ -164,7 +186,8 @@ impl WidgetImpl for TimelineViewPrivate {
             let selection_start = this.time_to_widget_point(selected_time_range.start()) as f32;
             let selection_end = this.time_to_widget_point(selected_time_range.end()) as f32;
 
-            let selection_color = RGBA::new(0.0, 0.0, 0.0, 0.1);
+            let is_dark_mode = StyleManager::default().is_dark();
+            let selection_color = RGBA::new(0.0, 0.0, 0.0, if is_dark_mode { 0.3 } else { 0.1 });
             snapshot.append_color(
                 &selection_color,
                 &Rect::new(0.0, 0.0, selection_start, this.height() as f32),

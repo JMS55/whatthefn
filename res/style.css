@@ -6,8 +6,13 @@ button.green-button {
 	background-color: @green_1;
 }
 
+timeline-view {
+    border-radius: 8px;
+}
+
 timeline-ticker {
-    background-color: @light_3;
+    color: @dark_4;
+    background-color: @brown_1;
     padding: 4px;
     border-radius: 8px;
 }

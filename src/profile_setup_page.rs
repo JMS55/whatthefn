@@ -13,7 +13,7 @@ use gtk::subclass::prelude::{
 };
 use gtk::traits::{EditableExt, FileChooserExt, NativeDialogExt, WidgetExt};
 use gtk::{
-    template_callbacks, Accessible, Buildable, Button, CompositeTemplate, ConstraintTarget, Entry,
+    template_callbacks, Accessible, Buildable, Button, CompositeTemplate, ConstraintTarget,
     FileChooserAction, FileChooserNative, FileFilter, Label, ResponseType, TemplateChild, Widget,
     Window,
 };
@@ -117,6 +117,7 @@ impl ProfileSetupPagePrivate {
             &page_view,
         )
         .await;
+
         match profiling_result {
             Ok(_) => {
                 let mut profile_path = project_directory;

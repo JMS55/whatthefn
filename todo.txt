@@ -1,22 +1,21 @@
-Port ProfileSetupPage to AdwEntryRow
+Does the padding of child widgets affect timeline view coordinate conversions?
+Finish TimelineView::new()
+Write TimelineRow
+Finish TimelineView
+    Setup scrolling up/down and left/right by implementing Scrollable (up/down: child widgets, left/right: display_time_range)
+    Eliminate flash from clearing selection
+    Setup button to zoom timeline on selection hover
+    Should maybe adjust display/selection time range to increase on resize?
+    Labels for selection start/end time
+    Movable handles for selection bounds
+    Add shadow at the ends when there is more to scroll?
+    Ensure everything is visible in dark mode
+    Cleanup, add comments
+
 Write ProfilePage
-    Write TimelineRow
-    Write TimelineView
-        Create child TimelineRows in constructed()
-        Setup scrolling up/down and left/right by implementing Scrollable
-        Eliminate flash from clearing selection
-        Setup button to zoom timeline on selection hover
-        Should maybe adjust display/selection time range to increase on resize?
-        Indicators for selection time range
-        Movable handles for selection bounds
-        Round selection corners
-        Add shadow at the ends when there is more to scroll?
     Write CallTree
     Write FlameGraph
     Put everything together
-    Draw longer ticks slightly darker
-    Ensure everything is visible in dark mode
-    Cleanup, add comments
 Cleanup tabs:
     Figure out segfault when closing window with more than 1 tab
     Fix tab height

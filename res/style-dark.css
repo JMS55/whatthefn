@@ -5,3 +5,11 @@ row.success-row {
 button.green-button {
 	background-color: @green_5;
 }
+
+timeline-ticker {
+    background-color: @brown_2;
+}
+
+timeline-row {
+    background-color: @dark_3;
+}

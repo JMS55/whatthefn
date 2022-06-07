@@ -10,6 +10,14 @@ impl TimelineRange {
     pub fn new(start: u64, end: u64) -> Self {
         Object::new(&[("start", &start), ("end", &end)]).unwrap()
     }
+
+    pub fn duration(&self) -> u64 {
+        self.end() - self.start()
+    }
+
+    pub fn contains(&self, timestamp: u64) -> bool {
+        (self.start()..=self.end()).contains(&timestamp)
+    }
 }
 
 impl Default for TimelineRange {
